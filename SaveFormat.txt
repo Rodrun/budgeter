@@ -1,0 +1,18 @@
+SAVE FORMAT FOR A MONTHLY BUDGET:
+
+(budget)
+[types list...]
+@   <-- Toggle budget row list indicator
+[
+    budget rows...
+]
+
+
+FIRST SECTION: (budget) (double)
+
+SECOND SECTION: [types list...] (String[])
+List of "types" separated by a tab each.
+
+THIRD SECTION: [budget rows...] (String[])
+List of budget rows. Each budget is in a new line, each part of a budget is
+separated by a tab.
