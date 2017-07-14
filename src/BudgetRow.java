@@ -1,20 +1,23 @@
 import com.sun.istack.internal.NotNull;
 
 import javax.swing.*;
+import javax.swing.table.AbstractTableModel;
 import java.text.MessageFormat;
 import java.util.Calendar;
+import java.util.Vector;
 
 /**
  * A single row in a budget list.
+ * NOTE: Every object in the row is a String!
  */
 public class BudgetRow {
 
-    public String date;
-    public String type;
-    public String name;
-    public double money;
+    private String date;
+    private String type;
+    private String name;
+    private String money;
 
-    public static JComboBox<String> types;
+    public static Vector<String> types;
     public static final String DELIMITER = "\t";
 
     /**
@@ -24,11 +27,20 @@ public class BudgetRow {
      * @param name Given name.
      * @param money Money added/subtracted from available.
      */
-    public BudgetRow(String date, String type, String name, double money) {
+    public BudgetRow(String date, String type, String name, String money) {
         this.date = date;
         this.type = type;
         this.name = name;
-        this.money = money;
+        this.money = String.valueOf(money);
+    }
+
+    /**
+     * Create an empty budget row.
+     */
+    public BudgetRow() {
+        date = FormattedDate.getFormattedToday();
+        name = "New";
+        money = "0";
     }
 
     /**
@@ -42,18 +54,11 @@ public class BudgetRow {
     }
 
     /**
-     * Create an empty budget row.
+     * Get the objects of the row.
+     * @return Row Objects, every object is a String.
      */
-    public BudgetRow() {
-        date = BudgetRow.getFormattedDate(
-                Calendar.getInstance().get(Calendar.DAY_OF_MONTH),
-                Calendar.getInstance().get(Calendar.MONTH));
-        money = 0.00;
-    }
-
     public Object[] getRowData() {
-        types.setSelectedItem(type);
-        return new Object[]{ date, types, name, money};
+        return new Object[]{ date, type, name, Double.valueOf(money)};
     }
 
     @Override
@@ -69,7 +74,7 @@ public class BudgetRow {
      * @param index
      * @param val
      */
-    private void setProperField(int index, String val) {
+    public void setProperField(int index, String val) {
         switch (index) {
             case 0: // String date
                 date = val;
@@ -81,9 +86,29 @@ public class BudgetRow {
                 name = val;
                 break;
             case 3: // double money
-                money = Double.parseDouble(val);
+                money = val;
                 break;
         }
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public String getMoneyString() {
+        return money;
+    }
+
+    public double getMoneyValue() {
+        return Double.valueOf(money);
     }
 
     /**
@@ -97,16 +122,6 @@ public class BudgetRow {
     }
 
     /**
-     * Format a date with only day and month.
-     * @param day Day of month.
-     * @param month Month.
-     * @return Formatted date string in "DAY-MONTH" format.
-     */
-    public static String getFormattedDate(int day, int month) {
-        return "" + day + "-" + month;
-    }
-
-    /**
      * For use of sorting purposes. Will remove the '-' from the formatted
      * date string and will return the month and day as an integer.
      * @param fdate Formatted date string.
@@ -117,6 +132,6 @@ public class BudgetRow {
         if (!(split.length < 2)) { // day and month
             return Integer.valueOf(split[0] +  split[1]);
         }
-        return 0;
+        return 11;
     }
 }

@@ -1,5 +1,5 @@
 import javax.swing.*;
-import java.awt.*;
+import java.util.Vector;
 
 /**
  * Created by Juan on 6/28/17.
@@ -13,7 +13,8 @@ import java.awt.*;
 public class Main {
 
     public static void main(String[] args) {
-        BudgetRow.types = new JComboBox<>(new String[]{
+        // Default types
+        BudgetRow.types = createStringVector(new String[]{
                 "Rent",
                 "Insurance",
                 "Utility",
@@ -28,9 +29,16 @@ public class Main {
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         //window.setSize(600, 450);
         window.pack();
-        window.setMinimumSize(window.getSize());
+        //window.setMinimumSize(window.getSize());
         window.setLocationRelativeTo(null);
         window.setVisible(true);
     }
 
+    private static Vector<String> createStringVector(String[] s) {
+        Vector<String> vec = new Vector<>();
+        for (String item : s) {
+            vec.add(item);
+        }
+        return vec;
+    }
 }
