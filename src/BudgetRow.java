@@ -2,6 +2,7 @@ import com.sun.istack.internal.NotNull;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.text.TableView;
 import java.text.MessageFormat;
 import java.util.Calendar;
 import java.util.Vector;
@@ -74,19 +75,19 @@ public class BudgetRow {
      * @param index
      * @param val
      */
-    public void setProperField(int index, String val) {
+    public void setProperField(int index, Object val) {
         switch (index) {
             case 0: // String date
-                date = val;
+                date = String.valueOf(val);
                 break;
             case 1: // String type
-                type = val;
+                type = String.valueOf(val);
                 break;
             case 2: // String name
-                name = val;
+                name = String.valueOf(val);
                 break;
             case 3: // double money
-                money = val;
+                money = String.valueOf(val);
                 break;
         }
     }

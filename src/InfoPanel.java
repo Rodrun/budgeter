@@ -1,5 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /**
  * Information panel.
@@ -9,7 +11,7 @@ public class InfoPanel extends JPanel {
     private double budget;
     private double moneySpent;
     private double moneyLeft;
-    private JTextField budgetField;
+    private NumberTextField budgetField;
     private JLabel spentLabel;
     private JLabel moneyLeftLabel;
 
@@ -18,24 +20,23 @@ public class InfoPanel extends JPanel {
         this.moneySpent = moneySpent;
         this.moneyLeft = moneyLeft;
 
-        budgetField = new JTextField("0.00", 8);
+        budgetField = new NumberTextField(0, 2);
         spentLabel = new JLabel("- $0.00"); // after budget
         moneyLeftLabel = new JLabel(" = $0.00");
 
+        budgetField.setColumns(8);
         budgetField.setToolTipText("Your monthly net income");
         spentLabel.setToolTipText("Expenses");
         moneyLeftLabel.setToolTipText("Money left after expenses");
         budgetField.addActionListener(event -> {
-            String val = budgetField.getText().trim().replaceAll("[^0-9+.-]",
-                    "");
             try {
-                this.budget = Double.valueOf(val);
+                this.budget = budgetField.getNumber();
             } catch (NumberFormatException e) {
                 JOptionPane.showMessageDialog(null,
                         "Error in budget: " + e.getMessage(), "Error",
                         JOptionPane.ERROR_MESSAGE);
             }
-            budgetField.setText(val);
+            budgetField.clean();
             setMoneyLeft(this.budget, this.moneySpent);
         });
 
@@ -44,6 +45,14 @@ public class InfoPanel extends JPanel {
         this.add(budgetField);
         this.add(spentLabel);
         this.add(moneyLeftLabel);
+    }
+
+    /**
+     * Get the inputted budget.
+     * @return Budget value.
+     */
+    public double getBudget() {
+        return budget;
     }
 
     /**
@@ -64,4 +73,13 @@ public class InfoPanel extends JPanel {
         moneySpent = spent;
         spentLabel.setText("- $" + String.format("%.02f", spent));
     }
+
+    /**
+     * Add an ActionListener to the text field that handles budget input.
+     * @param l ActionListener.
+     */
+    public void addActionListener(ActionListener l) {
+        budgetField.addActionListener(l);
+    }
+
 }

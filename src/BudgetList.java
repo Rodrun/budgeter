@@ -1,4 +1,5 @@
 import javax.swing.*;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 import java.util.Scanner;
@@ -12,10 +13,9 @@ import java.util.logging.Logger;
 public class BudgetList extends JTable {
 
     private DefaultTableModel model;
-    private TableColumn dateColumn;
-    private TableColumn typeColumn;
 
-    public static final String[] HEADERS = { "Date", "Type", "Name", "$" };
+    public static final String[] HEADERS = { "Date", "Type", "Name", "$",
+            "Remove" };
 
     public enum SortType {
         ALPHABETICAL, // Sort alphabetically
@@ -29,15 +29,25 @@ public class BudgetList extends JTable {
         model.setColumnIdentifiers(HEADERS);
         this.setModel(model);
         this.getTableHeader().setReorderingAllowed(false);
+        // Set remove column width
+        this.getTableHeader().getColumnModel().getColumn(4).setMaxWidth(75);
 
         // Cell editors
-        dateColumn = this.getColumnModel().getColumn(0);
-        typeColumn = this.getColumnModel().getColumn(1);
+        TableColumn dateColumn = this.getColumnModel().getColumn(0);
+        TableColumn typeColumn = this.getColumnModel().getColumn(1);
+        TableColumn moneyColumn = this.getColumnModel().getColumn(4);
         JComboBox<String> dateCombo = new JComboBox<>(
                 FormattedDate.getDaysOfMonth());
         JComboBox<String> typeCombo = new JComboBox<>(BudgetRow.types);
+        JCheckBox deleteButton = new JCheckBox("X");
+        deleteButton.addActionListener(e -> {
+            removeBudget(getSelectedRow());
+            Logger.getAnonymousLogger().log(Level.INFO,
+                    "Removing row at index " + getSelectedRow());
+        });
         dateColumn.setCellEditor(new DefaultCellEditor(dateCombo));
         typeColumn.setCellEditor(new DefaultCellEditor(typeCombo));
+        moneyColumn.setCellEditor(new DefaultCellEditor(deleteButton));
     }
 
     /**
@@ -46,6 +56,15 @@ public class BudgetList extends JTable {
     private void update() {
         // re render all cells
         this.repaint();
+    }
+
+    /**
+     * Add a TableModelListener to the underlying table model. This detects
+     * changes in the table.
+     * @param l TableModelListener to add.
+     */
+    public void addTableModelListener(TableModelListener l) {
+        model.addTableModelListener(l);
     }
 
     /**
@@ -69,8 +88,11 @@ public class BudgetList extends JTable {
         //getRowsVector().add(b);
         model.addRow(b.getRowData());
         update();
-        Logger.getAnonymousLogger().log(Level.INFO, "Add Budget: " +
-                b.toString());
+    }
+
+    public void removeBudget(int index) {
+        model.removeRow(index);
+        update();
     }
 
     /**
@@ -137,8 +159,7 @@ public class BudgetList extends JTable {
         for (int r = 0; r < model.getRowCount(); r++) {
             BudgetRow budgetRow = new BudgetRow();
             for (int col = 0; col < model.getColumnCount(); col++) {
-                budgetRow.setProperField(col,
-                        (String) model.getValueAt(r, col));
+                budgetRow.setProperField(col, model.getValueAt(r, col));
             }
             vec.add(budgetRow);
         }

@@ -1,5 +1,8 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.Calendar;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -15,9 +18,9 @@ public class AddPanel extends JPanel {
      */
     private static final String DEFAULT_PLUSMINUS = "-";
     /**
-     * Default text value for the money text field.
+     * Default value for the money text field.
      */
-    private static final String DEFAULT_MONEYFIELD = "0.00";
+    private static final double DEFAULT_MONEYFIELD = 0;
 
     private int day;
     private String plusMinus;
@@ -28,16 +31,15 @@ public class AddPanel extends JPanel {
     private JComboBox<String> plusMinusBox;
     private JComboBox<String> typeBox;
     private JTextField nameField;
-    private JTextField moneyField;
+    private NumberTextField moneyField;
     private JButton addButton;
-    private Tab[] tabs;
-    private int tabIndex = 0;
+    //private Tab[] tabs;
+    //private int tabIndex = 0;
 
     /**
      * Initialize the add panel, which handles adding a row to a BudgetList.
-     * @param tabs The tabs of the main tabbed pane.
      */
-    public AddPanel(Tab[] tabs, Vector<String> types) {
+    public AddPanel(Vector<String> types) {
         // Item init
         daysBox = new JComboBox<>(FormattedDate.getDaysOfMonthInt());
         daysBox.setSelectedIndex(FormattedDate.getDay() - 1);
@@ -48,12 +50,20 @@ public class AddPanel extends JPanel {
         typeBox.setToolTipText("Categorize");
         nameField = new JTextField();
         nameField.setColumns(16);
-        moneyField = new JTextField(DEFAULT_MONEYFIELD);
+        moneyField = new NumberTextField(DEFAULT_MONEYFIELD);
         moneyField.setColumns(6);
+        // Clear text field on click
+        moneyField.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+                moneyField.setText("");
+            }
+        });
 
-        this.tabs = tabs;
+        //this.tabs = tabs;
         addButton = new JButton("Add");
-        addButton.addActionListener(event -> {
+        /*addButton.addActionListener(event -> {
             day = daysBox.getSelectedIndex() + 1;
             plusMinus = plusMinusBox.getSelectedItem().toString();
             type = getSelectedType();
@@ -69,8 +79,8 @@ public class AddPanel extends JPanel {
             typeBox.setSelectedIndex(0);
             nameField.setText("");
             plusMinusBox.setSelectedItem(DEFAULT_PLUSMINUS);
-            moneyField.setText(DEFAULT_MONEYFIELD);
-        });
+            moneyField.setNumber(DEFAULT_MONEYFIELD);
+        });*/
 
         // Layout manager
         this.setLayout(new FlowLayout());
@@ -101,7 +111,7 @@ public class AddPanel extends JPanel {
      * Set the active tab. If value is < 0, will set to 0, or if value is
      * >= tabs.length, will set to tabs.length-1.
      * @param index Index of tab.
-     */
+
     public void setSelectedTab(int index) {
         if (index >= tabs.length) {
             tabIndex = tabs.length - 1;
@@ -112,7 +122,7 @@ public class AddPanel extends JPanel {
         }
         Logger.getAnonymousLogger().log(Level.INFO,
                 "AddPanel: Tab index = " + index);
-    }
+    }*/
 
     /**
      * Add a type to the list.
@@ -135,34 +145,53 @@ public class AddPanel extends JPanel {
     }
 
     /**
-     * Get last selected plus/minus.
+     * Reset all the input fields to their original states.
+     */
+    public void resetFields() {
+        setDayToToday();
+        nameField.setText("");
+        plusMinusBox.setSelectedItem(DEFAULT_PLUSMINUS);
+        moneyField.setNumber(DEFAULT_MONEYFIELD);
+    }
+
+    /**
+     * Get selected plus/minus.
      * @return Plus or minus string.
      */
-    private String getPlusMinus() {
-        return plusMinus;
+    public String getPlusMinus() {
+        return (plusMinusBox.getSelectedItem() == "-") ? "-" : "+";
+    }
+
+    /**
+     * Get selected day.
+     * @return Selected day string.
+     */
+    public String getSelectedDay() {
+        return String.valueOf(daysBox.getSelectedItem());
     }
 
     /**
      * Get the double value from the money text field.
      * @return 0.0 If no valid value is available, otherwise the input value.
      */
-    private double getMoneyFromField() {
-        double val = 0.0;
+    public String getMoneyFromField() {
+        /*double val = 0.0;
         try {
-            val = Double.valueOf(moneyField.getText());
+            val = moneyField.getNumber();
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(null,
                     "Error: " + e.getMessage(), "Error",
                     JOptionPane.ERROR_MESSAGE);
         }
-        return (getPlusMinus() == "+") ? val : -val;
+        return (getPlusMinus() == "+") ? val : -val;*/
+        return moneyField.getText();
     }
 
     /**
      * Get the input from the name text field.
      * @return Name string.
      */
-    private String getNameFromField() {
+    public String getNameFromField() {
         return nameField.getText();
     }
 
@@ -170,15 +199,23 @@ public class AddPanel extends JPanel {
      * Get the selected string from the type combo box.
      * @return Type string.
      */
-    private String getSelectedType() {
+    public String getSelectedType() {
         return (String) typeBox.getSelectedItem();
     }
 
     /**
      * Set the selection of the days combo box to today.
      */
-    private void setDayToToday() {
+    public void setDayToToday() {
         daysBox.setSelectedIndex(FormattedDate.getDay() - 1);
+    }
+
+    /**
+     * Add an action listener to the add button.
+     * @param l ActionListener.
+     */
+    public void addActionListener(ActionListener l) {
+        addButton.addActionListener(l);
     }
 
 }

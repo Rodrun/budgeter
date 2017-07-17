@@ -1,7 +1,8 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
-import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class MainWindow extends JFrame {
 
@@ -17,7 +18,6 @@ public class MainWindow extends JFrame {
     private JScrollPane fixedScroll;
     private JScrollPane variableScroll;
     private JScrollPane optionsScroll;
-
     /**
      * Fixed budget list.
      */
@@ -26,6 +26,7 @@ public class MainWindow extends JFrame {
      * Variable budget list.
      */
     private BudgetList vBudgetList;
+    private Budget budgetHandler;
     private AddPanel addPanel;
     private InfoPanel infoPanel;
 
@@ -46,6 +47,7 @@ public class MainWindow extends JFrame {
         optionsPane = new JPanel();
         fBudgetList = new BudgetList();
         vBudgetList = new BudgetList();
+        budgetHandler = new Budget(fBudgetList, vBudgetList);
         infoPanel = new InfoPanel(budget, moneySpent, moneyLeft);
         fixedScroll = new JScrollPane(fBudgetList);
         variableScroll = new JScrollPane(vBudgetList);
@@ -53,7 +55,7 @@ public class MainWindow extends JFrame {
                 new Tab("Fixed", fixedPane, fBudgetList),
                 new Tab("Variable", variablePane, vBudgetList),
                 new Tab("Options", optionsPane, null)};
-        addPanel = new AddPanel(tabbedPaneTabs, BudgetRow.types);
+        addPanel = new AddPanel(BudgetRow.types);
 
         // Shortcuts
         newMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N,
@@ -80,7 +82,9 @@ public class MainWindow extends JFrame {
             // ONLY fixed and variable tabs have a budget list!
             if (tabbedPane.getSelectedIndex() < 2) {
                 addPanel.setEnabled(true);
-                addPanel.setSelectedTab(tabbedPane.getSelectedIndex());
+                Tab.setSelectedTab(tabbedPaneTabs,
+                        tabbedPane.getSelectedIndex());
+                //addPanel.setSelectedTab(tabbedPane.getSelectedIndex());
             } else {
                 addPanel.setEnabled(false); // Don't want to blindly add
             }
@@ -90,6 +94,30 @@ public class MainWindow extends JFrame {
         fixedPane.add(fixedScroll);
         variablePane.add(variableScroll);
 
+        // Ensure that appropriate info display changes occur
+        budgetHandler.addBudgetEventListener(() -> {
+            infoPanel.setMoneySpent(budgetHandler.getMoneySpent());
+            infoPanel.setMoneyLeft(budgetHandler.getBudget(),
+                    budgetHandler.getMoneySpent());
+        });
+        // Budget handler must know if the budget has changed
+        infoPanel.addActionListener(e -> {
+            budgetHandler.setBudget(infoPanel.getBudget());
+        });
+        addPanel.addActionListener(e -> {
+            int which = (tabbedPaneTabs[0].isSelected()) ?
+                    Budget.FIXED : Budget.VARIABLE;
+            budgetHandler.addBudget(which, new BudgetRow(
+                    FormattedDate.dateFormat(FormattedDate.getMonth(),
+                            Integer.valueOf(addPanel.getSelectedDay())),
+                    addPanel.getSelectedType(),
+                    addPanel.getNameFromField(),
+                    addPanel.getMoneyFromField()
+            ));
+
+            budgetHandler.update();
+            addPanel.resetFields();
+        });
 
         this.setLayout(new BorderLayout());
         this.add(infoPanel, BorderLayout.NORTH);

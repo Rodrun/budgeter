@@ -14,7 +14,8 @@ public class Save {
 
     public double budget;
     public String[] types;
-    public Vector<BudgetRow> rows;
+    public Vector<BudgetRow> fixedRows;
+    public Vector<BudgetRow> variableRows;
 
     private File saveFile;
 
@@ -22,6 +23,10 @@ public class Save {
      * String that indicates the beginning of a budget chunk.
      */
     private static final String BUDGETROW_TOGGLE = "@";
+    /**
+     * String that indicates that the next lines are for variable budget rows.
+     */
+    private static final String BUDGETROW_SPLIT = "!";
     private static final String SEPARATOR = "\t";
 
     /**
@@ -37,8 +42,8 @@ public class Save {
      * @throws IOException Thrown by FileWriter.
      */
     public void writeSave() throws IOException {
-        StringBuilder b = new StringBuilder();
         // SEE: SaveFormat.txt
+        StringBuilder b = new StringBuilder();
         // First section: $budget
         writeLine(b, Double.toString(budget));
         // Second section: types
@@ -47,9 +52,17 @@ public class Save {
             b.append(type.replaceAll(SEPARATOR, "") + SEPARATOR);
         }
         b.append(System.lineSeparator());
+
         // Third section: budget rows
         writeLine(b, BUDGETROW_TOGGLE);
-        for (BudgetRow row : rows) {
+        // TODO: Possibly make this section smaller?
+        // fixed
+        for (BudgetRow row : fixedRows) {
+            writeLine(b, row.toString());
+        }
+        writeLine(b, BUDGETROW_SPLIT);
+        // variable
+        for (BudgetRow row : variableRows) {
             writeLine(b, row.toString());
         }
         writeLine(b, BUDGETROW_TOGGLE);
@@ -67,6 +80,7 @@ public class Save {
         // SEE: SaveFormat.txt
         Scanner scanner = new Scanner(saveFile);
         boolean readingBudget = false;
+        boolean readingFixedBudget = true;
         int section = 0;
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine();
@@ -79,7 +93,12 @@ public class Save {
             }
 
             if (readingBudget) { // Toggled true
-                rows.add(BudgetRow.readLine(line));
+                if (line == "!")
+                if (readingFixedBudget) {
+                    fixedRows.add(BudgetRow.readLine(line));
+                } else {
+                    variableRows.add(BudgetRow.readLine(line));
+                }
             } else {
                 switch (section) {
                     case 1: // budget amount
