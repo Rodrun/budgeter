@@ -8,19 +8,12 @@ import java.awt.event.ActionListener;
  */
 public class InfoPanel extends JPanel {
 
-    private double budget;
-    private double moneySpent;
-    private double moneyLeft;
     private NumberTextField budgetField;
     private JLabel spentLabel;
     private JLabel moneyLeftLabel;
 
     public InfoPanel(double budget, double moneySpent, double moneyLeft) {
-        this.budget = budget;
-        this.moneySpent = moneySpent;
-        this.moneyLeft = moneyLeft;
-
-        budgetField = new NumberTextField(0, 2);
+        budgetField = new NumberTextField(budget, 2);
         spentLabel = new JLabel("- $0.00"); // after budget
         moneyLeftLabel = new JLabel(" = $0.00");
 
@@ -28,17 +21,9 @@ public class InfoPanel extends JPanel {
         budgetField.setToolTipText("Your monthly net income");
         spentLabel.setToolTipText("Expenses");
         moneyLeftLabel.setToolTipText("Money left after expenses");
-        budgetField.addActionListener(event -> {
-            try {
-                this.budget = budgetField.getNumber();
-            } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(null,
-                        "Error in budget: " + e.getMessage(), "Error",
-                        JOptionPane.ERROR_MESSAGE);
-            }
-            budgetField.clean();
-            setMoneyLeft(this.budget, this.moneySpent);
-        });
+
+        setMoneySpent(moneySpent);
+        setMoneyLeft(moneyLeft);
 
         this.setLayout(new FlowLayout());
         this.add(new JLabel("Budget: $"));
@@ -48,21 +33,19 @@ public class InfoPanel extends JPanel {
     }
 
     /**
-     * Get the inputted budget.
+     * Get budget value inputted.
      * @return Budget value.
      */
-    public double getBudget() {
-        return budget;
+    public double getBudget() throws NumberFormatException{
+        return budgetField.getNumber();
     }
 
     /**
      * Update the money left label in the info panel.
-     * @param budget
-     * @param spent
+     * @param money Money left
      */
-    public void setMoneyLeft(double budget, double spent) {
-        moneyLeft = budget - spent;
-        moneyLeftLabel.setText(" = $" + String.format("%.02f", moneyLeft));
+    public void setMoneyLeft(double money) {
+        moneyLeftLabel.setText(" = $" + String.format("%.02f", money));
     }
 
     /**
@@ -70,7 +53,6 @@ public class InfoPanel extends JPanel {
      * @param spent
      */
     public void setMoneySpent(double spent) {
-        moneySpent = spent;
         spentLabel.setText("- $" + String.format("%.02f", spent));
     }
 
@@ -82,4 +64,12 @@ public class InfoPanel extends JPanel {
         budgetField.addActionListener(l);
     }
 
+    /**
+     * Reset all fields.
+     */
+    public void clear() {
+        budgetField.setNumber(0);
+        setMoneySpent(0);
+        setMoneyLeft(0);
+    }
 }

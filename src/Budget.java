@@ -1,6 +1,7 @@
 import javax.swing.event.TableModelEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -15,8 +16,6 @@ public class Budget {
     private BudgetList[] lists;
     private List<BudgetEventListener> listeners = new ArrayList<>();
     private double budget = 0;
-    private double spent = 0;
-    private double remainingBudget = 0;
 
     /**
      * Initialize a budget handler.
@@ -107,18 +106,21 @@ public class Budget {
      * @return Last available known money spent.
      */
     public double getMoneySpent() {
+        double spent = 0;
+        for (BudgetList list : lists) {
+            for (BudgetRow row : list.getRowsVector()) {
+                spent += row.getMoneyValue();
+            }
+        }
         return spent;
     }
 
     /**
      * Get the remaining amount of money left in the budget.
-     *
-     * This will not update the remaining budget, update() must\ be called
-     * to update the amount.
      * @return Remaining budget.
      */
     public double getRemainingBudget() {
-        return remainingBudget;
+        return getBudget() - getMoneySpent();
     }
 
     /**
@@ -126,17 +128,26 @@ public class Budget {
      * to any of the budget lists or any other budget-related value changes.
      */
     public void update() {
-        // Iterate through both lists to accumulate the spent amount
-        spent = 0;
-        for (BudgetList list : lists) {
-            for (BudgetRow row : list.getRowsVector()) {
-                spent -= row.getMoneyValue();
-            }
-        }
-        // Set the remaining budget available
-        remainingBudget = budget - spent;
-        // Finally, inform any listeners
         fireBudgetEvent();
+    }
+
+    /**
+     * Completely reset everything.
+     */
+    public void clear() {
+        for (BudgetList list : lists) {
+            list.clear();
+        }
+        setBudget(0); // will call update()
+    }
+
+    /**
+     * Get the BudgetRows of a BudgetList.
+     * @param which Which BudgetList.
+     * @return Vector of BudgetRows.
+     */
+    public final Vector<BudgetRow> getBudgetRows(int which) {
+        return lists[which].getRowsVector();
     }
 
 }

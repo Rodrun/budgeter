@@ -88,12 +88,14 @@ public class Save {
 
             // Check for budget rows toggle
             if (line == Save.BUDGETROW_TOGGLE) {
-                readingBudget = !readingBudget;
-                section = 3;
+                readingBudget = !readingBudget; // Hint hint ...
+                section = 3; // TODO: This seems fishy...
             }
 
             if (readingBudget) { // Toggled true
-                if (line == "!")
+                if (line == "!") {
+                    readingFixedBudget = false;
+                }
                 if (readingFixedBudget) {
                     fixedRows.add(BudgetRow.readLine(line));
                 } else {
@@ -139,4 +141,5 @@ public class Save {
     private void writeLine(StringBuilder b, String out) {
         b.append(out + System.lineSeparator());
     }
+
 }
