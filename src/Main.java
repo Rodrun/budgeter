@@ -14,19 +14,8 @@ import java.util.Vector;
 public class Main {
 
     public static void main(String[] args) {
-        // Default types
-        BudgetRow.types = createStringVector(new String[]{
-                "Rent",
-                "Insurance",
-                "Utility",
-                "Groceries",
-                "Loan",
-                "Clothing",
-                "Internet/phone",
-                "Misc."
-        });
-
         MainWindow window = new MainWindow();
+        window.setTitle("Budgeter");
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         //window.setSize(600, 450);
         window.pack();

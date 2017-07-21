@@ -139,6 +139,7 @@ public class AddPanel extends JPanel {
      */
     public void setTypes(Vector<String> t) {
         typeBox.removeAllItems();
+        BudgetRow.types.clear();
         for (String item : t) {
             addType(item);
         }
@@ -185,6 +186,15 @@ public class AddPanel extends JPanel {
         }
         return (getPlusMinus() == "+") ? val : -val;*/
         return moneyField.getText();
+    }
+
+    /**
+     * Get ACTUAL money value inputted (give negative or positive values).
+     * @return Real money value submitted.
+     */
+    public double getMoney() {
+        double money = Double.valueOf(getMoneyFromField());
+        return (getPlusMinus() == "-") ? -money : money;
     }
 
     /**

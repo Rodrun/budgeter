@@ -1,15 +1,11 @@
 import javax.swing.*;
-import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class MainWindow extends JFrame {
 
@@ -18,6 +14,7 @@ public class MainWindow extends JFrame {
     private JMenuItem newMenuItem;
     private JMenuItem openMenuItem;
     private JMenuItem saveMenuItem;
+    private JMenuItem saveAsMenuItem;
     private JTabbedPane tabbedPane;
     private JPanel fixedPane;
     private JPanel variablePane;
@@ -36,6 +33,10 @@ public class MainWindow extends JFrame {
     private Budget budgetHandler;
     private AddPanel addPanel;
     private InfoPanel infoPanel;
+    /**
+     * If a save file has been opened/is in use, this enables the 'Save' menu.
+     */
+    private boolean hasSaveFile = false;
 
     public MainWindow() {
         init();
@@ -48,6 +49,8 @@ public class MainWindow extends JFrame {
         newMenuItem = new JMenuItem("New");
         openMenuItem = new JMenuItem("Open");
         saveMenuItem = new JMenuItem("Save");
+        saveMenuItem.setEnabled(false);
+        saveAsMenuItem = new JMenuItem("Save As");
         tabbedPane = new JTabbedPane();
         fixedPane = new JPanel();
         variablePane = new JPanel();
@@ -71,7 +74,7 @@ public class MainWindow extends JFrame {
                 KeyEvent.CTRL_MASK));
         openMenuItem.setAccelerator (KeyStroke.getKeyStroke(KeyEvent.VK_O,
                 KeyEvent.CTRL_MASK));
-        saveMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
+        saveAsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
                 KeyEvent.CTRL_MASK));
 
 
@@ -80,14 +83,14 @@ public class MainWindow extends JFrame {
         menuBar.add(fileMenu);
         fileMenu.add(newMenuItem);
         fileMenu.add(openMenuItem);
-        fileMenu.add(saveMenuItem);
+        fileMenu.add(saveAsMenuItem);
         // File -> New
         newMenuItem.addActionListener(e -> {
             // Warn the user before clearing anything
             int confirm = JOptionPane.showConfirmDialog(this,
                     "Are you sure you want to start a new budget? Any unsaved" +
                             " changes will be lost!", "New",
-                    JOptionPane.QUESTION_MESSAGE);
+                    JOptionPane.OK_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
                 // Clear budget and update info
                 budgetHandler.clear();
@@ -103,54 +106,61 @@ public class MainWindow extends JFrame {
             if (confirm == JOptionPane.YES_OPTION) {
                 // Get file
                 final JFileChooser chooser = new JFileChooser();
-                chooser.setFileFilter(new MBFFilter());
-                int chooserValue = chooser.showOpenDialog(null);
-                File file;
+                chooser.setFileFilter(Save.FILTER);
+                int chooserValue = chooser.showOpenDialog(this);
                 if (chooserValue == JFileChooser.APPROVE_OPTION) {
-                    file = chooser.getSelectedFile();
-                } else {
-                    return; // Cancel
-                }
-                // Clear budget
-                budgetHandler.clear();
-                // Read file
-                // TODO: Change save to copy a file instead of creating
-                Save save = new Save(file.getPath());
-                try {
-                    save.readSave();
-                } catch (FileNotFoundException x) {
-                    JOptionPane.showMessageDialog(null, "Error: " +
-                            x.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                // Set budget
-                // TODO: More efficient way for this:
-                for (BudgetRow row : save.fixedRows) {
-                    budgetHandler.addBudget(Budget.FIXED, row);
-                }
-                for (BudgetRow row : save.variableRows) {
-                    budgetHandler.addBudget(Budget.VARIABLE, row);
-                }
-                budgetHandler.setBudget(save.budget);
-                // Update types and clear info
-                addPanel.setTypes(new Vector<>(Arrays.asList(save.types)));
-                infoPanel.clear();
+                    File file = chooser.getSelectedFile();
+                    // Clear budget
+                    budgetHandler.clear();
+                    infoPanel.clear();
+                    // Read file
+                    Save save = new Save(file);
+                    try {
+                        save.readSave();
+                    } catch (FileNotFoundException x) {
+                        JOptionPane.showMessageDialog(null, "Error: " +
+                                x.getMessage(), "Error",
+                                JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    // Set budget
+                    // TODO: More efficient way for this:
+                    for (BudgetRow row : save.fixedRows) {
+                        budgetHandler.addBudget(Budget.FIXED, row);
+                    }
+                    for (BudgetRow row : save.variableRows) {
+                        budgetHandler.addBudget(Budget.VARIABLE, row);
+                    }
+
+                    budgetHandler.setBudget(save.budget); // Triggers listeners
+                    infoPanel.setBudgetField(budgetHandler.getBudget());
+                    // Update types
+                    addPanel.setTypes(new Vector<>(Arrays.asList(save.types)));
+                } // Else cancel
             }
         });
         // File -> Save
-        saveMenuItem.addActionListener(e -> {
+        saveAsMenuItem.addActionListener(e -> {
             final JFileChooser chooser = new JFileChooser();
-            chooser.setFileFilter(new MBFFilter());
-            int confirm = chooser.showSaveDialog(null);
+            int confirm = chooser.showSaveDialog(this);
             if (confirm == JFileChooser.APPROVE_OPTION) {
-                // Get chosen path
-                Save save = new Save(chooser.getSelectedFile().getPath());
+                // Setup save
+                // Add .mbf extensions if file does not have it
+                String ext = (Save.getExtension(chooser.getSelectedFile())
+                        .compareToIgnoreCase(Save.EXTENSION) == 0)
+                        ? "" : "." + Save.EXTENSION;
+                Save save = new Save(
+                        chooser.getCurrentDirectory().getPath() +
+                        System.getProperty("file.separator") +
+                        chooser.getSelectedFile().getName() +
+                        ext);
                 // Set values
                 save.fixedRows = budgetHandler.getBudgetRows(Budget.FIXED);
                 save.variableRows = budgetHandler.getBudgetRows(
                         Budget.VARIABLE);
                 save.budget = budgetHandler.getBudget();
-                save.types = (String[])BudgetRow.types.toArray();
+                save.types = BudgetRow.types.toArray(
+                        new String[BudgetRow.types.size()]);
                 try {
                     save.writeSave();
                 } catch (IOException ex) {
@@ -187,7 +197,16 @@ public class MainWindow extends JFrame {
 
         // Ensure that appropriate info display changes occur
         budgetHandler.addBudgetEventListener(() -> {
-            infoPanel.setMoneySpent(budgetHandler.getMoneySpent());
+            double moneySpent = budgetHandler.getMoneySpent();
+            // Show positive sign if spent is negative
+            if (moneySpent < 0) {
+                infoPanel.setSign(InfoPanel.POSITIVE);
+            } else {
+                infoPanel.setSign(InfoPanel.NEGATIVE);
+            }
+
+            // Update information
+            infoPanel.setMoneySpent(Math.abs(moneySpent));
             infoPanel.setMoneyLeft(budgetHandler.getRemainingBudget());
         });
         // Budget handler must know if the budget has changed
@@ -211,7 +230,7 @@ public class MainWindow extends JFrame {
                             Integer.valueOf(addPanel.getSelectedDay())),
                     addPanel.getSelectedType(),
                     addPanel.getNameFromField(),
-                    addPanel.getMoneyFromField()
+                    String.valueOf(addPanel.getMoney())
             ));
 
             budgetHandler.update();
@@ -222,6 +241,14 @@ public class MainWindow extends JFrame {
         this.add(infoPanel, BorderLayout.NORTH);
         this.add(tabbedPane, BorderLayout.CENTER);
         this.add(addPanel, BorderLayout.SOUTH);
+    }
+
+    /**
+     * Set whether save file is in use.
+     * @param flag
+     */
+    private void setHasSaveFile(boolean flag) {
+        hasSaveFile = flag;
     }
 
 }

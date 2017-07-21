@@ -1,14 +1,10 @@
 SAVE FORMAT FOR A MONTHLY BUDGET:
-
+=================================
 (budget)
 [types list...]
-@   <-- Toggle budget row list indicator
 [
 budget rows...
-!   <-- Denote separation of fixed and variable rows
-budget rows...
 ]
-@
 
 FIRST SECTION: (budget) (double)
 
@@ -16,13 +12,18 @@ SECOND SECTION: [types list...] (String[])
 List of "types" separated by a tab each.
 
 THIRD SECTION: [budget rows...] (String[])
-List of budget rows. Toggled read by a line with '@'.Each budget is in a new
-line, each part of a budget is separated by a tab. Between a fixed budget rows
-chunk and a variable fixed budget rows chunk, there must be a line with '!' to
-note that the next chunk is the chunk with the variable budget rows.
+List of budget rows. Each field of a budget row
 
-[
-... (Fixed budget rows)
-!
-... (Variable budget rows)
-]
+NOTES & IMPLEMENTATION:
+=======================
+* A budget row is in the format of:
+[expense type] [date] [budget type] [name] [money]
+
+Where:
+[expense type]: Either "fix" or "var", tells the reader in which budget list
+it is to reside in.
+[date]: Date in DAY-MONTH format.
+[budget type]: A budget type, should be one of [types list...] tokens, but the
+reader will not enforce it.
+[name]: Name of the budget row.
+[money]: Numerical value.

@@ -5,6 +5,7 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.text.TableView;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Vector;
 
@@ -19,7 +20,26 @@ public class BudgetRow {
     private String name;
     private String money;
 
-    public static Vector<String> types;
+    public static final String[] DEFAULT_TYPE_ARRAY = new String[]{
+            "Rent",
+            "Insurance",
+            "Utility",
+            "Groceries",
+            "Loan",
+            "Clothing",
+            "Internet/phone",
+            "Misc."
+    };
+    // TODO: Move types to Budget?
+    /**
+     * The budget types available. Budget types allow the user to categorize
+     * each type of expense. The default value is DEFAULT_TYPE_ARRAY.
+     */
+    public static Vector<String> types = new Vector<>(Arrays.asList(
+            DEFAULT_TYPE_ARRAY));
+    /**
+     * Line delimiter (used to split separate tokens).
+     */
     public static final String DELIMITER = "\t";
 
     /**
@@ -60,7 +80,7 @@ public class BudgetRow {
      * @return Row Objects, every object is a String.
      */
     public Object[] getRowData() {
-        return new Object[]{ date, type, name, Double.valueOf(money)};
+        return new Object[]{ date, type, name, money };
     }
 
     @Override
@@ -109,17 +129,21 @@ public class BudgetRow {
         return money;
     }
 
-    public double getMoneyValue() {
+    public double getMoneyValue() throws NumberFormatException {
         return Double.valueOf(money);
     }
 
     /**
      * Parse a string line containing budget data.
      * @param line String containing one budget row.
-     * @return BudgetRow created fro
+     * @return A new BudgetRow.
+     * @throws NullPointerException If line is null.
      */
     @NotNull
-    public static BudgetRow readLine(String line) {
+    public static BudgetRow readLine(String line) throws NullPointerException {
+        if (line == null) {
+            throw new NullPointerException("Line may not be null.");
+        }
         return new BudgetRow(line.split(BudgetRow.DELIMITER));
     }
 

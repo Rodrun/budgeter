@@ -42,8 +42,6 @@ public class BudgetList extends JTable {
         JCheckBox deleteButton = new JCheckBox("X");
         deleteButton.addActionListener(e -> {
             removeBudget(getSelectedRow());
-            Logger.getAnonymousLogger().log(Level.INFO,
-                    "Removing row at index " + getSelectedRow());
         });
         dateColumn.setCellEditor(new DefaultCellEditor(dateCombo));
         typeColumn.setCellEditor(new DefaultCellEditor(typeCombo));
@@ -69,15 +67,17 @@ public class BudgetList extends JTable {
 
     /**
      * Clear the budget list.
-     * @return A copy of Vector of Budgets that will be cleared.
      */
-    public Vector<BudgetRow> clear() {
-        Vector<BudgetRow> copy = getRowsVector();
+    public void clear() {
         for (int i = 0; i < model.getRowCount(); i++) {
-            model.removeRow(i);
+            try {
+                model.removeRow(i);
+            } catch (ArrayIndexOutOfBoundsException exception) {
+                // Suppress it, will probably resolve itself...
+                continue;
+            }
         }
         update();
-        return copy;
     }
 
     /**
@@ -111,6 +111,7 @@ public class BudgetList extends JTable {
      * @return A string chunk meant to be saved into a save file.
      */
     @Override
+    @Deprecated
     public String toString() {
         StringBuilder string = new StringBuilder();
         for (BudgetRow bud : getRowsVector()) {

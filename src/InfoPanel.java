@@ -8,9 +8,13 @@ import java.awt.event.ActionListener;
  */
 public class InfoPanel extends JPanel {
 
+    public static final String POSITIVE = "+";
+    public static final String NEGATIVE = "-";
+
     private NumberTextField budgetField;
     private JLabel spentLabel;
     private JLabel moneyLeftLabel;
+    private String sign = NEGATIVE;
 
     public InfoPanel(double budget, double moneySpent, double moneyLeft) {
         budgetField = new NumberTextField(budget, 2);
@@ -30,6 +34,24 @@ public class InfoPanel extends JPanel {
         this.add(budgetField);
         this.add(spentLabel);
         this.add(moneyLeftLabel);
+    }
+
+    /**
+     * Set the sign of the budget "math" (The sign shown before the expenses).
+     * @param sign POSITIVE or NEGATIVE sign.
+     */
+    public void setSign(String sign) {
+        if (sign == POSITIVE || sign == NEGATIVE) {
+            this.sign = sign;
+        }
+    }
+
+    /**
+     * Set the number of the budget text field.
+     * @param n Number value.
+     */
+    public void setBudgetField(double n) {
+        budgetField.setNumber(n);
     }
 
     /**
@@ -53,7 +75,7 @@ public class InfoPanel extends JPanel {
      * @param spent
      */
     public void setMoneySpent(double spent) {
-        spentLabel.setText("- $" + String.format("%.02f", spent));
+        spentLabel.setText(sign + " $" + String.format("%.02f", spent));
     }
 
     /**

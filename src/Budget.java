@@ -109,7 +109,7 @@ public class Budget {
         double spent = 0;
         for (BudgetList list : lists) {
             for (BudgetRow row : list.getRowsVector()) {
-                spent += row.getMoneyValue();
+                spent -= row.getMoneyValue();
             }
         }
         return spent;
@@ -136,6 +136,7 @@ public class Budget {
      */
     public void clear() {
         for (BudgetList list : lists) {
+            Logger.getAnonymousLogger().log(Level.INFO, "Clearing list.");
             list.clear();
         }
         setBudget(0); // will call update()
