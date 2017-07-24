@@ -10,13 +10,15 @@ public class Tab {
 
     public String name;
     public JPanel panel;
-    public BudgetList budgetList;
     public boolean selected = false;
 
-    public Tab(String name, JPanel panel, BudgetList budgetList) {
+    protected Tab() {
+        this("", null);
+    }
+
+    public Tab(String name, JPanel panel) {
         this.name = name;
         this.panel = panel;
-        this.budgetList = budgetList;
     }
 
     public boolean isSelected() {

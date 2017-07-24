@@ -2,10 +2,9 @@ import javax.swing.*;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
+import java.util.HashMap;
 import java.util.Scanner;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * The GUI budget table.
@@ -14,7 +13,7 @@ public class BudgetList extends JTable {
 
     private DefaultTableModel model;
 
-    public static final String[] HEADERS = { "Date", "Type", "Name", "$",
+    private static final String[] HEADERS = { "Date", "TypesList", "Name", "$",
             "Remove" };
 
     public enum SortType {
@@ -38,11 +37,9 @@ public class BudgetList extends JTable {
         TableColumn moneyColumn = this.getColumnModel().getColumn(4);
         JComboBox<String> dateCombo = new JComboBox<>(
                 FormattedDate.getDaysOfMonth());
-        JComboBox<String> typeCombo = new JComboBox<>(BudgetRow.types);
+        JComboBox<String> typeCombo = new JComboBox<>(Budget.types.toArray());
         JCheckBox deleteButton = new JCheckBox("X");
-        deleteButton.addActionListener(e -> {
-            removeBudget(getSelectedRow());
-        });
+        deleteButton.addActionListener(e -> removeBudget(getSelectedRow()));
         dateColumn.setCellEditor(new DefaultCellEditor(dateCombo));
         typeColumn.setCellEditor(new DefaultCellEditor(typeCombo));
         moneyColumn.setCellEditor(new DefaultCellEditor(deleteButton));
@@ -85,7 +82,6 @@ public class BudgetList extends JTable {
      * @param b A BudgetRow.
      */
     public void addBudget(BudgetRow b) {
-        //getRowsVector().add(b);
         model.addRow(b.getRowData());
         update();
     }
@@ -99,6 +95,7 @@ public class BudgetList extends JTable {
      * Read a string chunk containing a budget list.
      * @param chunk String data of a budget list.
      */
+    @Deprecated
     public void readBudget(String chunk) {
         Scanner scanner = new Scanner(chunk);
         while (scanner.hasNext()) {
@@ -166,4 +163,20 @@ public class BudgetList extends JTable {
         }
         return vec;
     }
+
+    /**
+     * Get the total amount of expenses by type. If expenses are negative,
+     * this means $X has been spent, otherwise if positive, $X have been
+     * gained.
+     * @return HashMap of expenses by type.
+     */
+    public HashMap<String, Double> getExpenseByType() {
+        HashMap<String, Double> map = new HashMap<>(Budget.types.size());
+        for (BudgetRow row : getRowsVector()) {
+            map.put(row.getType(), map.getOrDefault(row.getType(), 0d) +
+                    row.getMoneyValue());
+        }
+        return map;
+    }
+
 }

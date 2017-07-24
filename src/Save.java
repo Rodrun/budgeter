@@ -20,8 +20,7 @@ import java.util.logging.Logger;
 public class Save {
 
     public double budget = 0;
-    public String[] types = BudgetRow.types.toArray(
-            new String[BudgetRow.types.size()]);
+    public String[] types = Budget.types.toArray();
     public Vector<BudgetRow> fixedRows;
     public Vector<BudgetRow> variableRows;
 

@@ -20,23 +20,6 @@ public class BudgetRow {
     private String name;
     private String money;
 
-    public static final String[] DEFAULT_TYPE_ARRAY = new String[]{
-            "Rent",
-            "Insurance",
-            "Utility",
-            "Groceries",
-            "Loan",
-            "Clothing",
-            "Internet/phone",
-            "Misc."
-    };
-    // TODO: Move types to Budget?
-    /**
-     * The budget types available. Budget types allow the user to categorize
-     * each type of expense. The default value is DEFAULT_TYPE_ARRAY.
-     */
-    public static Vector<String> types = new Vector<>(Arrays.asList(
-            DEFAULT_TYPE_ARRAY));
     /**
      * Line delimiter (used to split separate tokens).
      */

@@ -3,10 +3,6 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Calendar;
-import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * The add panel handles the addition of a new field to the budget list.
@@ -22,31 +18,27 @@ public class AddPanel extends JPanel {
      */
     private static final double DEFAULT_MONEYFIELD = 0;
 
-    private int day;
-    private String plusMinus;
-    private String type;
-    private String name;
-    private double money;
+    private TypesList types;
     private JComboBox<Integer> daysBox;
     private JComboBox<String> plusMinusBox;
     private JComboBox<String> typeBox;
     private JTextField nameField;
     private NumberTextField moneyField;
     private JButton addButton;
-    //private Tab[] tabs;
-    //private int tabIndex = 0;
 
     /**
-     * Initialize the add panel, which handles adding a row to a BudgetList.
+     * Create an AddPanel.
+     * @param types TypesList list.
      */
-    public AddPanel(Vector<String> types) {
+    public AddPanel(TypesList types) {
+        this.types = types;
         // Item init
         daysBox = new JComboBox<>(FormattedDate.getDaysOfMonthInt());
         daysBox.setSelectedIndex(FormattedDate.getDay() - 1);
         plusMinusBox = new JComboBox<>(new String[]{ "-", "+" });
         plusMinusBox.setSelectedItem(DEFAULT_PLUSMINUS);
         plusMinusBox.setToolTipText("Subtracting/adding from budget");
-        typeBox = new JComboBox<>(types);
+        typeBox = new JComboBox<>(types.toArray());
         typeBox.setToolTipText("Categorize");
         nameField = new JTextField();
         nameField.setColumns(16);
@@ -61,32 +53,19 @@ public class AddPanel extends JPanel {
             }
         });
 
+        Budget.types.addTypesChangeListener(() -> {
+            typeBox.setModel(new DefaultComboBoxModel<>(
+                    Budget.types.toArray()));
+        });
+
         //this.tabs = tabs;
         addButton = new JButton("Add");
-        /*addButton.addActionListener(event -> {
-            day = daysBox.getSelectedIndex() + 1;
-            plusMinus = plusMinusBox.getSelectedItem().toString();
-            type = getSelectedType();
-            name = getNameFromField();
-            money = getMoneyFromField();
-            tabs[tabIndex].budgetList.addBudget(new BudgetRow(
-                    FormattedDate.dateFormat(FormattedDate.getMonth(), day),
-                    type,
-                    name,
-                    String.valueOf(money)));
-            // Lastly, reset fields
-            //setDayToToday();
-            typeBox.setSelectedIndex(0);
-            nameField.setText("");
-            plusMinusBox.setSelectedItem(DEFAULT_PLUSMINUS);
-            moneyField.setNumber(DEFAULT_MONEYFIELD);
-        });*/
 
         // Layout manager
         this.setLayout(new FlowLayout());
         this.add(new JLabel("Day:"));
         this.add(daysBox);
-        this.add(new JLabel("Type:"));
+        this.add(new JLabel("TypesList:"));
         this.add(typeBox);
         this.add(new JLabel("Name:"));
         this.add(nameField);
@@ -97,52 +76,11 @@ public class AddPanel extends JPanel {
         this.add(addButton);
     }
 
-    /*public void addButtonListener(ActionListener al) {
-        addButton.addActionListener(al);
-    }*/
-
     @Override
     public void setEnabled(boolean flag) {
         super.setEnabled(flag);
+        moneyField.setEnabled(flag);
         addButton.setEnabled(flag);
-    }
-
-    /**
-     * Set the active tab. If value is < 0, will set to 0, or if value is
-     * >= tabs.length, will set to tabs.length-1.
-     * @param index Index of tab.
-
-    public void setSelectedTab(int index) {
-        if (index >= tabs.length) {
-            tabIndex = tabs.length - 1;
-        } else if (index < 0) {
-            tabIndex = 0;
-        } else {
-            tabIndex = index;
-        }
-        Logger.getAnonymousLogger().log(Level.INFO,
-                "AddPanel: Tab index = " + index);
-    }*/
-
-    /**
-     * Add a type to the list.
-     * @param name Name of type.
-     */
-    public void addType(String name) {
-        BudgetRow.types.add(name);
-        typeBox.addItem(name);
-    }
-
-    /**
-     * Replace the type list.
-     * @param t Vector of types.
-     */
-    public void setTypes(Vector<String> t) {
-        typeBox.removeAllItems();
-        BudgetRow.types.clear();
-        for (String item : t) {
-            addType(item);
-        }
     }
 
     /**
@@ -176,15 +114,6 @@ public class AddPanel extends JPanel {
      * @return 0.0 If no valid value is available, otherwise the input value.
      */
     public String getMoneyFromField() {
-        /*double val = 0.0;
-        try {
-            val = moneyField.getNumber();
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(null,
-                    "Error: " + e.getMessage(), "Error",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-        return (getPlusMinus() == "+") ? val : -val;*/
         return moneyField.getText();
     }
 
@@ -207,7 +136,7 @@ public class AddPanel extends JPanel {
 
     /**
      * Get the selected string from the type combo box.
-     * @return Type string.
+     * @return TypesList string.
      */
     public String getSelectedType() {
         return (String) typeBox.getSelectedItem();
@@ -221,11 +150,12 @@ public class AddPanel extends JPanel {
     }
 
     /**
-     * Add an action listener to the add button.
+     * Add an action listener to the add button and to the money text field.
      * @param l ActionListener.
      */
     public void addActionListener(ActionListener l) {
         addButton.addActionListener(l);
+        moneyField.addActionListener(l);
     }
 
 }
