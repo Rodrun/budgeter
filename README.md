@@ -2,5 +2,6 @@
 
 Basic budgeting tool for monthly budgets.
 
-- Plan your budgetHandler
-- List your fixed and variable expenses
+- Plan your monthly budget
+- Set goals and limits to your budget
+- See visualizations of your expenses
