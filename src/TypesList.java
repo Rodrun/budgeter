@@ -1,9 +1,12 @@
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * A "TypesList" is the category of an expense.
+ * A TypesList holds a list of available "types," which are used to
+ * categorize expenses.
  */
 public class TypesList {
 
@@ -43,11 +46,18 @@ public class TypesList {
     }
 
     /**
-     * Set the types list. Notifies change listeners.
+     * Set the types list. Notifies change listeners. Will not add empty
+     * strings as types.
      * @param sl String array to set the list to.
      */
     public void setList(String[] sl) {
         list = new ArrayList<>(Arrays.asList(sl));
+        // Remove any empty strings in the list
+        for (String t : list) {
+            if (t.isEmpty()) {
+                list.remove(t);
+            }
+        }
         fireTypesChanged();
     }
 
@@ -100,6 +110,7 @@ public class TypesList {
         listeners.forEach(listener -> {
             listener.typesChanged();
         });
+        Logger.getAnonymousLogger().log(Level.INFO, "Listeners informed.");
     }
 
     /**

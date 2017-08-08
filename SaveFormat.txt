@@ -1,29 +1,28 @@
 SAVE FORMAT FOR A MONTHLY BUDGET:
 =================================
-(budget)
+(budgetHandler)
 [types list...]
 [
-budget rows...
+budgetHandler rows...
 ]
 
-FIRST SECTION: (budget) (double)
+FIRST SECTION: (budgetHandler) (double)
 
 SECOND SECTION: [types list...] (String[])
 List of "types" separated by a tab each.
 
-THIRD SECTION: [budget rows...] (String[])
-List of budget rows. Each field of a budget row
+THIRD SECTION: [budgetHandler rows...] (BudgetRow[])
+List of budgetHandler rows. Each field of a budgetHandler row
 
 NOTES & IMPLEMENTATION:
 =======================
-* A budget row is in the format of:
-[expense type] [date] [budget type] [name] [money]
+* A budgetHandler row is in the format of:
+[expense type] [date] [budgetHandler type] [name] [money]
 
 Where:
-[expense type]: Either "fix" or "var", tells the reader in which budget list
-it is to reside in.
+[expense type]: Either "Fixed" or "Variable" to identify expense type.
 [date]: Date in DAY-MONTH format.
-[budget type]: A budget type, should be one of [types list...] tokens, but the
-reader will not enforce it.
-[name]: Name of the budget row.
+[budgetHandler type]: A budgetHandler type, should be one of [types list...] tokens, but the
+reader will NOT enforce it.
+[name]: Name of the budgetHandler row.
 [money]: Numerical value.

@@ -46,7 +46,7 @@ public class NumberTextField extends JTextField {
      * @param number Value to set text.
      */
     public void setNumber(double number) {
-        setText(String.format("%.02f", number));
+        setText(String.format(numberFormat, number));
     }
 
     /**
@@ -63,7 +63,9 @@ public class NumberTextField extends JTextField {
      * @param amount The number of trailing zeroes, will use absolute value.
      */
     public void setTrailingZeroes(int amount) {
-        numberFormat = "%.0xf".replaceAll("x",
-                Integer.toString(Math.abs(amount)));
+        numberFormat = "%.0xf".replaceAll(
+                "x",
+                Integer.toString(Math.abs(amount))
+        );
     }
 }

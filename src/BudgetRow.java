@@ -69,8 +69,10 @@ public class BudgetRow {
     @Override
     public String toString() {
         // Create a formatted string that has all objects separated by delimiter
-        return new MessageFormat("{1}{0}{2}{0}{3}{0}{4}").format(
-                new Object[]{ DELIMITER, date, type, name, money});
+        return new MessageFormat(
+                "{1}{0}{2}{0}{3}{0}{4}").format(
+                        new Object[]{ DELIMITER, date, type, name, money}
+                        );
     }
 
     /**
@@ -143,4 +145,5 @@ public class BudgetRow {
         }
         return 11;
     }
+
 }

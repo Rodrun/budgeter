@@ -1,6 +1,5 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 /**
@@ -14,10 +13,10 @@ public class InfoPanel extends JPanel {
     private NumberTextField budgetField;
     private JLabel spentLabel;
     private JLabel moneyLeftLabel;
-    private String sign = NEGATIVE;
+    private String sign;
 
-    public InfoPanel(double budget, double moneySpent, double moneyLeft) {
-        budgetField = new NumberTextField(budget, 2);
+    public InfoPanel(BudgetHandler budgetHandler) {
+        budgetField = new NumberTextField(budgetHandler.getBudget(), 2);
         spentLabel = new JLabel("- $0.00"); // after budget
         moneyLeftLabel = new JLabel(" = $0.00");
 
@@ -26,11 +25,33 @@ public class InfoPanel extends JPanel {
         spentLabel.setToolTipText("Expenses");
         moneyLeftLabel.setToolTipText("Money left after expenses");
 
-        setMoneySpent(moneySpent);
-        setMoneyLeft(moneyLeft);
+        budgetHandler.addBudgetEventListener(() -> {
+            // Set positive sign if spent is negative
+            setSign((budgetHandler.getMoneySpent() < 0) ?
+                POSITIVE : NEGATIVE);
+
+            setMoneySpent(Math.abs(budgetHandler.getMoneySpent()));
+            setMoneyLeft(budgetHandler.getRemainingBudget());
+        });
+
+        // Update budget when user enters value
+        addActionListener(e -> {
+            double bud = budgetHandler.getBudget();
+            try {
+                bud = getBudget();
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(null,
+                        "Error in budget: " + ex.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+            } finally {
+                budgetHandler.setBudget(bud);
+                setBudgetField(budgetHandler.getBudget());
+            }
+        });
 
         this.setLayout(new FlowLayout());
-        this.add(new JLabel("Budget: $"));
+        this.add(new JLabel("BudgetHandler: $"));
         this.add(budgetField);
         this.add(spentLabel);
         this.add(moneyLeftLabel);
@@ -56,10 +77,18 @@ public class InfoPanel extends JPanel {
 
     /**
      * Get budget value inputted.
-     * @return Budget value.
+     * @return BudgetHandler value.
      */
     public double getBudget() throws NumberFormatException{
         return budgetField.getNumber();
+    }
+
+    /**
+     * Get the sign.
+     * @return The sign shown after the budget amount.
+     */
+    public String getSign() {
+        return sign;
     }
 
     /**
@@ -94,4 +123,5 @@ public class InfoPanel extends JPanel {
         setMoneySpent(0);
         setMoneyLeft(0);
     }
+
 }

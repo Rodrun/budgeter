@@ -37,7 +37,7 @@ public class BudgetList extends JTable {
         TableColumn moneyColumn = this.getColumnModel().getColumn(4);
         JComboBox<String> dateCombo = new JComboBox<>(
                 FormattedDate.getDaysOfMonth());
-        JComboBox<String> typeCombo = new JComboBox<>(Budget.types.toArray());
+        JComboBox<String> typeCombo = new JComboBox<>(BudgetHandler.types.toArray());
         JCheckBox deleteButton = new JCheckBox("X");
         deleteButton.addActionListener(e -> removeBudget(getSelectedRow()));
         dateColumn.setCellEditor(new DefaultCellEditor(dateCombo));
@@ -66,14 +66,7 @@ public class BudgetList extends JTable {
      * Clear the budget list.
      */
     public void clear() {
-        for (int i = 0; i < model.getRowCount(); i++) {
-            try {
-                model.removeRow(i);
-            } catch (ArrayIndexOutOfBoundsException exception) {
-                // Suppress it, will probably resolve itself...
-                continue;
-            }
-        }
+        model.setRowCount(0);
         update();
     }
 
@@ -101,6 +94,7 @@ public class BudgetList extends JTable {
         while (scanner.hasNext()) {
             getRowsVector().add(BudgetRow.readLine(scanner.nextLine()));
         }
+        scanner.close(); // Albeit deprecated, just in case...
     }
 
     /**
@@ -171,7 +165,7 @@ public class BudgetList extends JTable {
      * @return HashMap of expenses by type.
      */
     public HashMap<String, Double> getExpenseByType() {
-        HashMap<String, Double> map = new HashMap<>(Budget.types.size());
+        HashMap<String, Double> map = new HashMap<>(BudgetHandler.types.size());
         for (BudgetRow row : getRowsVector()) {
             map.put(row.getType(), map.getOrDefault(row.getType(), 0d) +
                     row.getMoneyValue());

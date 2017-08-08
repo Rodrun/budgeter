@@ -4,15 +4,16 @@ import org.jfree.chart.*;
 import org.jfree.data.general.DefaultPieDataset;
 import org.jfree.data.xy.DefaultXYDataset;
 
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Map;
 
 /**
- * The options tab. Displays visual representation of the budget and allows
+ * The options tab. Displays visual representation of the budgetHandler and allows
  * user to set other available budgeting options.
  */
-public class OptionsTab extends Tab {
+public class OverviewTab extends Tab {
 
     private static final String[] expTypeStrings = {
             "Both Expense TypesList",
@@ -28,16 +29,30 @@ public class OptionsTab extends Tab {
      * The JPanel that will be inside the scroll pane
      */
     private JPanel internalPanel;
-    private Budget budget;
+    private BudgetHandler budgetHandler;
     private JLabel chartLabel;
     private JComboBox<String> chartBox, expTypeBox, typeBox;
+    private String title;
 
-    private OptionsTab() { }
+    private OverviewTab() { }
 
-    public OptionsTab(Budget budget) {
-        super("Options", new JPanel());
-        this.budget = budget;
+    public OverviewTab(BudgetHandler budgetHandler) {
+        super("Overview", new JPanel());
+        this.budgetHandler = budgetHandler;
+        title = "";
         init();
+    }
+
+    /**
+     * Set the title of the chart.
+     * @param t Chart title.
+     */
+    public void setChartTitle(String t) {
+        title = t;
+    }
+
+    public String getChartTitle() {
+        return title;
     }
 
     private void init() {
@@ -47,7 +62,7 @@ public class OptionsTab extends Tab {
         chartLabel = new JLabel();
         chartBox = new JComboBox<>(chartStrings);
         expTypeBox = new JComboBox<>(expTypeStrings);
-        typeBox = new JComboBox<>(Budget.types.toArray());
+        typeBox = new JComboBox<>(BudgetHandler.types.toArray());
 
         // Add ActionListeners
         class Updater implements ActionListener {
@@ -66,15 +81,19 @@ public class OptionsTab extends Tab {
         typeBox.addActionListener(listener); // Enabled when XY is selected
 
         // Update types if they're changed
-        Budget.types.addTypesChangeListener(() -> {
+        BudgetHandler.types.addTypesChangeListener(() -> {
             typeBox.setModel(new DefaultComboBoxModel<>(
-                    Budget.types.toArray()));
+                    BudgetHandler.types.toArray()));
+        });
+        budgetHandler.addBudgetEventListener(() -> {
+            update();
         });
 
         // The default selection is the pie chart, so disable initially
         chartLabel.setEnabled(false);
 
-        panel.add(new JScrollPane(internalPanel));
+        panel.setLayout(new BorderLayout());
+        panel.add(new JScrollPane(internalPanel), BorderLayout.CENTER);
         internalPanel.add(chartLabel);
         internalPanel.add(chartBox);
         internalPanel.add(expTypeBox);
@@ -88,17 +107,20 @@ public class OptionsTab extends Tab {
     private JFreeChart generatePieChart() {
         JFreeChart chart = null;
         DefaultPieDataset set = new DefaultPieDataset();
-        // Pie chart cannot show single budget type, but CAN show 1 expense type
+        // Pie chart cannot show single budgetHandler type, but CAN show 1 expense type
         switch (expTypeBox.getSelectedIndex()) {
             case 0: // Both
-                setPieDataset(set, budget.getExpenseByType());
+                setPieDataset(set, budgetHandler.getExpenseByType());
                 break;
             default: // Fixed or Variable
-                setPieDataset(set, budget.getExpenseByType(
-                        Budget.Which.get(expTypeBox.getSelectedIndex() - 1)));
+                setPieDataset(set, budgetHandler.getExpenseByType(
+                        BudgetHandler.Which.get(expTypeBox.getSelectedIndex() - 1)));
                 break;
         }
-        return chart;
+        return ChartFactory.createPieChart(title, set,
+                true, // legend
+                true, // tooltips
+                false); // urls
     }
 
     /**
@@ -145,9 +167,16 @@ public class OptionsTab extends Tab {
         } else { // 1, XY
             chart = generateXYChart();
         }
-        chartLabel.setIcon(new ImageIcon(chart.createBufferedImage(
-                internalPanel.getWidth(), internalPanel.getHeight() / 30
-        )));
+        int width = internalPanel.getWidth() - 100;
+        int height = internalPanel.getHeight() - 100;
+        if (width <= 0) {
+            width = 400;
+        }
+        if (height <= 0) {
+            height = 400;
+        }
+        chartLabel.setIcon(new ImageIcon(chart.createBufferedImage(width,
+                height)));
     }
 
 }

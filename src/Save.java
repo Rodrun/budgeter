@@ -1,17 +1,12 @@
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
-import sun.rmi.runtime.Log;
-
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.text.MessageFormat;
 import java.util.Scanner;
-import java.util.Vector;
 import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import static java.util.logging.Logger.getAnonymousLogger;
 
 /**
  * Handle save file reading and writing. All public fields are used by save to
@@ -19,20 +14,13 @@ import java.util.logging.Logger;
  */
 public class Save {
 
-    public double budget = 0;
-    public String[] types = Budget.types.toArray();
-    public Vector<BudgetRow> fixedRows;
-    public Vector<BudgetRow> variableRows;
-
     private File saveFile;
 
-    private static final String EXPENSETYPE_FIXED = "fix";
-    private static final String EXPENSETYPE_VARIABLE = "var";
-    private static final String SEPARATOR = "\t";
+    private static final String DELIMITER = BudgetRow.DELIMITER;
 
     public static final String EXTENSION = "mbf";
     public static final FileNameExtensionFilter FILTER =
-            new FileNameExtensionFilter("Monthly Budget File",
+            new FileNameExtensionFilter("Monthly BudgetHandler File",
                     EXTENSION);
 
     /**
@@ -41,7 +29,7 @@ public class Save {
      * @throws NullPointerException If path is null.
      */
     public Save(String path) throws NullPointerException {
-        setFilePath(path);
+        setPath(path);
     }
 
     /**
@@ -55,116 +43,123 @@ public class Save {
 
     /**
      * Initialize a save with no definite path. Highly recommended to call
-     * setFile() or setFilePath() afterwards before reading or writing in order
+     * setFile() or setPath() afterwards before reading or writing in order
      * to have a valid save file.
      */
     public Save() {
-        setFilePath("");
+        setPath("");
     }
 
     /**
      * Write save to file.
      * @throws IOException Thrown by FileWriter.
      */
-    public void writeSave() throws IOException {
-        Logger.getAnonymousLogger().log(Level.INFO, "Writing save...");
+    public void writeSave(BudgetHandler budgetHandler) throws IOException {
+        getAnonymousLogger().log(Level.INFO, "Writing save...");
         // SEE: SaveFormat.txt
         StringBuilder b = new StringBuilder();
-        // First section: $budget
-        writeLine(b, Double.toString(budget));
+        // First section: $budgetHandler
+        writeLine(b, Double.toString(budgetHandler.getBudget()));
         // Second section: types
-        for (String type : types) {
+        for (String type : BudgetHandler.types.getList()) {
             // Ensure that there are no separator characters in each type
-            b.append(type.replaceAll(SEPARATOR, "") + SEPARATOR);
+            b.append(type.replaceAll(DELIMITER, "") + DELIMITER);
         }
         b.append(System.lineSeparator());
 
-        // Third section: budget rows
-        Logger.getAnonymousLogger().log(Level.INFO, "Writing budget rows...");
-        Vector<BudgetRow>[] twoLists = new Vector[]{ fixedRows, variableRows };
-        String[] twoTypes = { EXPENSETYPE_FIXED, EXPENSETYPE_VARIABLE };
-        for (int v = 0; v < twoLists.length; v++) {
+        // Third section: budgetHandler rows
+        getAnonymousLogger().log(Level.INFO, "Writing budgetHandler rows...");
+        for (BudgetHandler.Which which : BudgetHandler.Which.values()) {
             // Iterate through the appropriate list
-            for (int row = 0; row < twoLists[v].size(); row++) {
-                //System.out.println(twoLists[v].get(row).toString());
-                writeLine(b, twoTypes[v] + BudgetRow.DELIMITER +
-                        twoLists[v].get(row).toString());
+            for (BudgetRow row : budgetHandler.getBudgetRows(which)) {
+                writeLine(b, which.getName() + DELIMITER +
+                        row.toString());
             }
         }
 
         // Finally write to file
-        Logger.getAnonymousLogger().log(Level.INFO, "Writing to file...");
+        getAnonymousLogger().log(Level.INFO, "Writing to file...");
         try (FileWriter writer = new FileWriter(saveFile)) {
             writer.write(b.toString());
         } // Will call close() after success or fail
+        getAnonymousLogger().log(Level.INFO, "Writing done.");
     }
 
     /**
      * Read from save file.
+     * @return Parsed budget, however, will return null if save file is null.
      */
-    public void readSave() throws FileNotFoundException {
-        Logger.getAnonymousLogger().log(Level.INFO, "Reading save...");
+    public BudgetHandler readSave() throws FileNotFoundException {
+        if (saveFile == null) {
+            return null;
+        }
+        BudgetHandler budgetHandler = new BudgetHandler(
+                new BudgetList(),
+                new BudgetList()
+        );
+        getAnonymousLogger().log(Level.INFO, "Reading save...");
         // SEE: SaveFormat.txt
         try (Scanner scanner = new Scanner(saveFile)) {
-            Vector<BudgetRow>[] rows = new Vector[]{ fixedRows, variableRows};
-            String[] expTypes = new String[]{ EXPENSETYPE_FIXED,
-                    EXPENSETYPE_VARIABLE };
+            /**
+             * Determine what to look for depending on the section.
+             */
             int section = 0;
 
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
                 // Empty lines should not increment the section number
-                if (line.isEmpty()) {
+                System.out.println(line);
+                if (line.trim().isEmpty()) {
                     continue;
+                } else if (section != 3) {
+                    // Section 3 may consist of multiple lines
+                    section++;
                 }
 
                 switch (section) {
                     case 1: // budget amount
                         try {
-                            budget = Double.valueOf(line);
+                            budgetHandler.setBudget(Double.valueOf(line));
                         } catch (NumberFormatException e) {
-                            Logger.getAnonymousLogger().log(Level.WARNING,
-                                    "'budget' could not be parsed because: " +
-                                            e.getMessage());
-                            // Budget must have a value! Default to 0
-                            budget = 0;
-                            Logger.getAnonymousLogger().log(Level.WARNING,
-                                    "'budget' is set to" + budget);
+                            getAnonymousLogger().log( Level.WARNING,
+                                    "BudgetHandler couldn't be parsed because "
+                                            + e.getMessage());
+                            // Must have a value! Default to 0
+                            budgetHandler.setBudget(0);
                         }
                         break;
                     case 2: // types...
-                        types = line.split(SEPARATOR);
+                        BudgetHandler.types.setList(line.split(DELIMITER));
                         break;
-                    case 3: // budget rows...
-                        String[] split = line.split(BudgetRow.DELIMITER);
-                        if (split.length == 5) {
-                            // Determine budget type
-                            for (int et = 0; et < expTypes.length; et++) {
-                                if (split[0] == expTypes[et]) {
+                    case 3: // budgetHandler rows...
+                        String[] split = line.split(DELIMITER);
+                        getAnonymousLogger().log(Level.INFO, "Line split " +
+                                "length = " + split.length);
+                        if (split.length >= 5) {
+                            // Determine budgetHandler type
+                            for (BudgetHandler.Which which :
+                                    BudgetHandler.Which.values()) {
+                                if (split[0].compareTo(which.getName()) == 0) {
                                     // Remove 1st token and add row
-                                    rows[et].add(BudgetRow.readLine(
-                                            line.replaceFirst(expTypes[et] +
-                                                    BudgetRow.DELIMITER, "")
-                                    ));
+                                    budgetHandler.addBudget(which,
+                                            BudgetRow.readLine(
+                                                    line.replaceFirst(
+                                                            which.getName() +
+                                                                    DELIMITER,
+                                                            "")
+                                            )
+                                    );
+                                    break; // Done with the line
                                 }
                             }
                         }
                         break;
                 }
             }
-        } catch (FileNotFoundException fex){
+        } catch (FileNotFoundException fex) {
             throw fex;
         }
-
-        // Ensure that there are no null budget rows
-        if (fixedRows == null) {
-            Logger.getAnonymousLogger().log(Level.INFO, "fixedRows = null.");
-            fixedRows = new Vector<>();
-        }
-        if (variableRows == null) {
-            Logger.getAnonymousLogger().log(Level.INFO, "variableRows = null.");
-            variableRows = new Vector<>();
-        }
+        return budgetHandler;
     }
 
     /**
@@ -172,10 +167,7 @@ public class Save {
      * @param path File path.
      * @throws NullPointerException If path is null.
      */
-    public void setFilePath(String path) throws NullPointerException{
-        if (path == null) {
-            throw new NullPointerException("Save path cannot be null.");
-        }
+    public void setPath(String path) throws NullPointerException{
         setFile(new File(path));
     }
 
@@ -185,12 +177,7 @@ public class Save {
      * @throws NullPointerException If file is null.
      */
     public void setFile(File f) throws NullPointerException {
-        if (f == null) {
-            throw new NullPointerException("Save file cannot be null.");
-        }
         saveFile = f;
-        Logger.getAnonymousLogger().log(Level.INFO, "Save path set to " +
-            f.getPath());
     }
 
     /**
@@ -208,6 +195,22 @@ public class Save {
      */
     public String getPath() {
         return saveFile.getPath();
+    }
+
+    /**
+     * Get the save file.
+     * @return The save file to get.
+     */
+    public File getFile() {
+        return saveFile;
+    }
+
+    /**
+     * Check if save file is null.
+     * @return True if save file is null, false otherwise.
+     */
+    public boolean isNull() {
+        return saveFile == null;
     }
 
     /**

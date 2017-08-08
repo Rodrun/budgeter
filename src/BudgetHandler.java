@@ -6,7 +6,7 @@ import java.util.logging.Logger;
 /**
  * Handle all budgeting functions and the tables.
  */
-public class Budget {
+public class BudgetHandler {
 
     /**
      * Index of which BudgetList to use.
@@ -52,25 +52,43 @@ public class Budget {
             "Misc."
     };
     /**
-     * The budget types available. Budget types allow the user to categorize
-     * each type of expense. The default value is DEFAULT_TYPE_ARRAY.
+     * The budget types available. Types allow the user to categorize
+     * their expenses. The default value is DEFAULT_TYPE_ARRAY.
      */
     public static TypesList types = new TypesList(DEFAULT_TYPE_ARRAY);
 
     private BudgetList[] lists;
-    private List<BudgetEventListener> listeners = new ArrayList<>();
+    private List<BudgetEventListener> listeners = new ArrayList<>(2);
     private double budget = 0;
 
     /**
-     * Initialize a budget handler.
+     * Creates a BudgetHandler with given BudgetLists.
      *
      * @param fixed    Fixed BudgetList.
      * @param variable Variable BudgetList.
      */
-    public Budget(BudgetList fixed, BudgetList variable) {
+    public BudgetHandler(BudgetList fixed, BudgetList variable) {
         lists = new BudgetList[]{fixed, variable};
         addListeners();
         update();
+    }
+
+    /**
+     * Creates a BudgetHandler with empty BudgetLists.
+     */
+    public BudgetHandler() {
+        lists = new BudgetList[]{ new BudgetList(), new BudgetList() };
+        addListeners();
+        update();
+    }
+
+    /**
+     * Set to a new BudgetHandler.
+     */
+    public void copy(BudgetHandler other) {
+        lists = other.lists;
+        listeners = other.listeners;
+        budget = other.budget;
     }
 
     /**
@@ -82,7 +100,7 @@ public class Budget {
                 // TODO: Add more budget-related stuff
                 if (e.getType() == TableModelEvent.UPDATE ||
                         e.getType() == TableModelEvent.DELETE) {
-                    //fireBudgetEvent();
+                    //notifyListeners();
                     update();
                 }
             });
@@ -92,7 +110,7 @@ public class Budget {
     /**
      * Notify all listeners that a budget event occurred.
      */
-    private void fireBudgetEvent() {
+    private void notifyListeners() {
         for (BudgetEventListener listener : listeners) {
             listener.eventOccurred();
         }
@@ -180,15 +198,15 @@ public class Budget {
      * to any of the budget lists or any other budget-related value changes.
      */
     public void update() {
-        fireBudgetEvent();
+        notifyListeners();
     }
 
     /**
      * Completely reset everything.
      */
     public void clear() {
+        Logger.getAnonymousLogger().log(Level.INFO, "Clearing lists.");
         for (BudgetList list : lists) {
-            Logger.getAnonymousLogger().log(Level.INFO, "Clearing list.");
             list.clear();
         }
         setBudget(0); // will call update()
@@ -224,6 +242,15 @@ public class Budget {
      */
     public HashMap<String, Double> getExpenseByType(Which which) {
         return lists[which.index].getExpenseByType();
+    }
+
+    /**
+     * Get a BudgetList.
+     * @param which Which BudgetList.
+     * @return Appropriate BudgetList.
+     */
+    public BudgetList getBudgetList(Which which) {
+        return lists[which.index];
     }
 
 }

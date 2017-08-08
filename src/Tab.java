@@ -8,14 +8,31 @@ import java.util.logging.Logger;
  */
 public class Tab {
 
+    // All free to access and modify
     public String name;
     public JPanel panel;
     public boolean selected = false;
 
+    /**
+     * Creates a Tab with an empty name and JPanel.
+     */
     protected Tab() {
         this("", null);
     }
 
+    /**
+     * Creates a Tab with a name and an empty JPanel.
+     * @param name Tab name.
+     */
+    public Tab(String name) {
+        this("", new JPanel());
+    }
+
+    /**
+     * Creates a Tab with a name and given JPanel.
+     * @param name Tab name.
+     * @param panel Tab panel.
+     */
     public Tab(String name, JPanel panel) {
         this.name = name;
         this.panel = panel;
@@ -30,6 +47,7 @@ public class Tab {
      * @param tabbedPane The tabbed pane to add a tab to.
      * @param tab The tab to add to the tabbed pane.
      */
+    @Deprecated
     public static void addTo(JTabbedPane tabbedPane, Tab tab) {
         tabbedPane.addTab(tab.name, tab.panel);
     }
