@@ -3,7 +3,6 @@ import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 import java.util.HashMap;
-import java.util.Scanner;
 import java.util.Vector;
 
 /**
@@ -13,7 +12,7 @@ public class BudgetList extends JTable {
 
     private DefaultTableModel model;
 
-    private static final String[] HEADERS = { "Date", "TypesList", "Name", "$",
+    private static final String[] HEADERS = { "Date", "CategoryList", "Name", "$",
             "Remove" };
 
     public enum SortType {
@@ -79,50 +78,27 @@ public class BudgetList extends JTable {
         update();
     }
 
+    /**
+     * Remove a row.
+     * @param index Index of the row too remove.
+     */
     public void removeBudget(int index) {
         model.removeRow(index);
         update();
     }
 
     /**
-     * Read a string chunk containing a budget list.
-     * @param chunk String data of a budget list.
-     */
-    @Deprecated
-    public void readBudget(String chunk) {
-        Scanner scanner = new Scanner(chunk);
-        while (scanner.hasNext()) {
-            getRowsVector().add(BudgetRow.readLine(scanner.nextLine()));
-        }
-        scanner.close(); // Albeit deprecated, just in case...
-    }
-
-    /**
-     * Return a savable string chunk.
-     * @return A string chunk meant to be saved into a save file.
-     */
-    @Override
-    @Deprecated
-    public String toString() {
-        StringBuilder string = new StringBuilder();
-        for (BudgetRow bud : getRowsVector()) {
-            string.append(bud.toString());
-        }
-        return string.toString();
-    }
-
-    /**
      * Sort the budget list.
+     * @param type Method to sort.
      */
     public void sort(SortType type) {
         getRowsVector().sort((BudgetRow o1, BudgetRow o2) -> {
             // 1 = >, -1 = <, 0 = EQUAL
             if (type == SortType.BY_DATE) {
                 // Get 'values' of dates (concatenated month and day)
-                if (BudgetRow.convertDateToInt(o1.getDate()) !=
-                        BudgetRow.convertDateToInt(o2.getDate())) {
-                    return (BudgetRow.convertDateToInt(o1.getDate()) >
-                            BudgetRow.convertDateToInt(o2.getDate())) ? 1 : -1;
+                if (o1.getDay() != o2.getDay()) {
+                    return (o1.getDay() >
+                            o2.getDay()) ? 1 : -1;
                 } // else its equal
             } else if (type == SortType.ALPHABETICAL){
                 return o1.getName().compareTo(o2.getName());
@@ -142,7 +118,7 @@ public class BudgetList extends JTable {
     }
 
     /**
-     * Scan all rows to get a vector of BudgetRows.
+     * Get the BudgetRows in the list in the form of a Vector object.
      * @return Vector of BudgetRows.
      */
     public Vector<BudgetRow> getRowsVector() {
@@ -159,15 +135,23 @@ public class BudgetList extends JTable {
     }
 
     /**
-     * Get the total amount of expenses by type. If expenses are negative,
+     * Get the BudgetRows in the list.
+     * @return Array of BudgetRows.
+     */
+    public BudgetRow[] getRows() {
+        return getRowsVector().toArray(new BudgetRow[getRowCount()]);
+    }
+
+    /**
+     * Get the total amount of expenses by category. If expenses are negative,
      * this means $X has been spent, otherwise if positive, $X have been
      * gained.
      * @return HashMap of expenses by type.
      */
-    public HashMap<String, Double> getExpenseByType() {
+    public HashMap<String, Double> getExpenseByCategory() {
         HashMap<String, Double> map = new HashMap<>(BudgetHandler.types.size());
         for (BudgetRow row : getRowsVector()) {
-            map.put(row.getType(), map.getOrDefault(row.getType(), 0d) +
+            map.put(row.getCategory(), map.getOrDefault(row.getCategory(), 0d) +
                     row.getMoneyValue());
         }
         return map;

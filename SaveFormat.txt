@@ -17,12 +17,12 @@ List of budgetHandler rows. Each field of a budgetHandler row
 NOTES & IMPLEMENTATION:
 =======================
 * A budgetHandler row is in the format of:
-[expense type] [date] [budgetHandler type] [name] [money]
+[expense category] [date] [budgetHandler category] [name] [money]
 
 Where:
-[expense type]: Either "Fixed" or "Variable" to identify expense type.
+[expense category]: Either "Fixed" or "Variable" to identify expense category.
 [date]: Date in DAY-MONTH format.
-[budgetHandler type]: A budgetHandler type, should be one of [types list...] tokens, but the
+[budgetHandler category]: A budgetHandler category, should be one of [types list...] tokens, but the
 reader will NOT enforce it.
 [name]: Name of the budgetHandler row.
 [money]: Numerical value.

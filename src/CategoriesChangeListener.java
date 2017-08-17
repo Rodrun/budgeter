@@ -3,8 +3,8 @@ import javax.swing.event.ChangeListener;
 import java.util.EventListener;
 
 /**
- * Listener for a modification in the TypesList list.
+ * Listener for a modification in the CategoryList list.
  */
-public interface TypesChangeListener {
+public interface CategoriesChangeListener {
     void typesChanged();
 }

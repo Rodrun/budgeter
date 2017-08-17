@@ -93,10 +93,7 @@ public class Save {
         if (saveFile == null) {
             return null;
         }
-        BudgetHandler budgetHandler = new BudgetHandler(
-                new BudgetList(),
-                new BudgetList()
-        );
+        BudgetHandler budgetHandler = new BudgetHandler();
         getAnonymousLogger().log(Level.INFO, "Reading save...");
         // SEE: SaveFormat.txt
         try (Scanner scanner = new Scanner(saveFile)) {
@@ -133,8 +130,6 @@ public class Save {
                         break;
                     case 3: // budgetHandler rows...
                         String[] split = line.split(DELIMITER);
-                        getAnonymousLogger().log(Level.INFO, "Line split " +
-                                "length = " + split.length);
                         if (split.length >= 5) {
                             // Determine budgetHandler type
                             for (BudgetHandler.Which which :
@@ -149,6 +144,7 @@ public class Save {
                                                             "")
                                             )
                                     );
+                                    System.out.println("ADDED");
                                     break; // Done with the line
                                 }
                             }

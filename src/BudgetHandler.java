@@ -55,7 +55,7 @@ public class BudgetHandler {
      * The budget types available. Types allow the user to categorize
      * their expenses. The default value is DEFAULT_TYPE_ARRAY.
      */
-    public static TypesList types = new TypesList(DEFAULT_TYPE_ARRAY);
+    public static CategoryList types = new CategoryList(DEFAULT_TYPE_ARRAY);
 
     private BudgetList[] lists;
     private List<BudgetEventListener> listeners = new ArrayList<>(2);
@@ -216,10 +216,27 @@ public class BudgetHandler {
      * Get the BudgetRows of a BudgetList.
      *
      * @param which Which BudgetList.
-     * @return Vector of BudgetRows.
+     * @return Array of BudgetRows.
      */
-    public final Vector<BudgetRow> getBudgetRows(Which which) {
-        return lists[which.index].getRowsVector();
+    public BudgetRow[] getBudgetRows(Which which) {
+        return lists[which.index].getRows();
+    }
+
+    /**
+     * Get the BudgetRows of a BudgetList, but only of one category.
+     * @param category Category of rows to return.
+     * @param which Which BudgetList.
+     * @return Array of BudgetRows from one category.
+     */
+    public BudgetRow[] getBudgetRows(String category, Which which) {
+        ArrayList<BudgetRow> list =
+                new ArrayList<>(lists[which.index].getRowCount());
+        for (BudgetRow row : getBudgetRows(which)) {
+            if (row.getCategory() == category) {
+
+            }
+        }
+        return list.toArray(new BudgetRow[list.size()]);
     }
 
     /**
@@ -229,7 +246,7 @@ public class BudgetHandler {
     public HashMap<String, Double> getExpenseByType() {
         HashMap<String, Double> map = new HashMap<>(types.size());
         for (BudgetList list : lists) {
-            map.putAll(list.getExpenseByType());
+            map.putAll(list.getExpenseByCategory());
         }
         return map;
     }
@@ -241,7 +258,31 @@ public class BudgetHandler {
      * @throws IndexOutOfBoundsException If which is invalid.
      */
     public HashMap<String, Double> getExpenseByType(Which which) {
-        return lists[which.index].getExpenseByType();
+        return lists[which.index].getExpenseByCategory();
+    }
+
+    /**
+     * Get the amount of expenses of a type from a BudgetList. Each expense
+     * will be paired to its day of the month (Integer value).
+     * @param which Which BudgetList.
+     * @return HashMap of expenses of every month day from a given type.
+     */
+    public HashMap<Integer, Double> getDatedExpenses(String type, Which which) {
+        HashMap<Integer, Double> map =
+                new HashMap<>(lists[which.index].getRowCount());
+        boolean[] daysSet = new boolean[FormattedDate.getMaxMonthDays()];
+        for (BudgetRow row : getBudgetRows(which)) {
+            map.put(row.getDay(), map.getOrDefault(row.getDay(), 0d) +
+                row.getMoneyValue());
+            daysSet[row.getDay()] = true;
+        }
+        // Ensure that days without any expenses are set to 0
+        for (int i = 0; i < daysSet.length; i++) {
+            if (!daysSet[i]) {
+                map.put(i, 0d);
+            }
+        }
+        return map;
     }
 
     /**

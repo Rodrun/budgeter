@@ -1,12 +1,17 @@
 import javax.swing.*;
 
 import org.jfree.chart.*;
+import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.general.DefaultPieDataset;
 import org.jfree.data.xy.DefaultXYDataset;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -16,7 +21,7 @@ import java.util.Map;
 public class OverviewTab extends Tab {
 
     private static final String[] expTypeStrings = {
-            "Both Expense TypesList",
+            "Both Expense CategoryList",
             "Fixed Expenses",
             "Variable Expenses"
     };
@@ -30,8 +35,10 @@ public class OverviewTab extends Tab {
      */
     private JPanel internalPanel;
     private BudgetHandler budgetHandler;
-    private JLabel chartLabel;
-    private JComboBox<String> chartBox, expTypeBox, typeBox;
+    private JFreeChart chart;
+    private ChartPanel chartPanel;
+    // Char type, expense type, category
+    private JComboBox<String> chartBox, expTypeBox, catBox;
     private String title;
 
     private OverviewTab() { }
@@ -51,6 +58,10 @@ public class OverviewTab extends Tab {
         title = t;
     }
 
+    /***
+     * Get the title of the chart.
+     * @return
+     */
     public String getChartTitle() {
         return title;
     }
@@ -59,10 +70,9 @@ public class OverviewTab extends Tab {
         internalPanel = new JPanel();
         internalPanel.setLayout(new BoxLayout(internalPanel,
                 BoxLayout.PAGE_AXIS));
-        chartLabel = new JLabel();
         chartBox = new JComboBox<>(chartStrings);
         expTypeBox = new JComboBox<>(expTypeStrings);
-        typeBox = new JComboBox<>(BudgetHandler.types.toArray());
+        catBox = new JComboBox<>(BudgetHandler.types.toArray());
 
         // Add ActionListeners
         class Updater implements ActionListener {
@@ -74,30 +84,51 @@ public class OverviewTab extends Tab {
         Updater listener = new Updater();
         chartBox.addActionListener(listener);
         chartBox.addActionListener(e -> {
-            // TypesList box should be disabled unless XY Chart is selected
-            typeBox.setEnabled(chartBox.getSelectedItem() == chartStrings[1]);
+            // CategoryList box should be disabled unless XY Chart is selected
+            catBox.setEnabled(chartBox.getSelectedIndex() == 0);
         });
         expTypeBox.addActionListener(listener);
-        typeBox.addActionListener(listener); // Enabled when XY is selected
+        catBox.addActionListener(listener); // Enabled when XY is selected
+        catBox.setEnabled(false);
 
         // Update types if they're changed
         BudgetHandler.types.addTypesChangeListener(() -> {
-            typeBox.setModel(new DefaultComboBoxModel<>(
-                    BudgetHandler.types.toArray()));
+            updateTypes();
         });
         budgetHandler.addBudgetEventListener(() -> {
             update();
         });
 
-        // The default selection is the pie chart, so disable initially
-        chartLabel.setEnabled(false);
+
+        chart = ChartFactory.createPieChart("Start budgeting for visual",
+                new DefaultPieDataset());
+        chartPanel = new ChartPanel(chart,
+                true, // properties
+                true, // save
+                true, // print
+                false, // zoom
+                true // tooltips
+        );
 
         panel.setLayout(new BorderLayout());
         panel.add(new JScrollPane(internalPanel), BorderLayout.CENTER);
-        internalPanel.add(chartLabel);
+        internalPanel.add(chartPanel);
         internalPanel.add(chartBox);
         internalPanel.add(expTypeBox);
-        internalPanel.add(typeBox);
+        internalPanel.add(catBox);
+    }
+
+    /**
+     * Update the typesBox ComboBoxModel.
+     */
+    private void updateTypes() {
+        catBox.setModel(new DefaultComboBoxModel<>(
+                BudgetHandler.types.toArray()));
+        // Add required items
+        catBox.addItem("((No types; Spending))");
+        catBox.addItem("((All types))");
+        // Set the default selection to the last item
+        catBox.setSelectedIndex(catBox.getItemCount() - 1);
     }
 
     /**
@@ -105,31 +136,24 @@ public class OverviewTab extends Tab {
      * @return The pie chart.
      */
     private JFreeChart generatePieChart() {
-        JFreeChart chart = null;
         DefaultPieDataset set = new DefaultPieDataset();
-        // Pie chart cannot show single budgetHandler type, but CAN show 1 expense type
+        // Cannot show specific (category) type, but can show expense types
         switch (expTypeBox.getSelectedIndex()) {
             case 0: // Both
                 setPieDataset(set, budgetHandler.getExpenseByType());
                 break;
             default: // Fixed or Variable
-                setPieDataset(set, budgetHandler.getExpenseByType(
-                        BudgetHandler.Which.get(expTypeBox.getSelectedIndex() - 1)));
+                setPieDataset(set,
+                        budgetHandler.getExpenseByType(
+                            BudgetHandler.Which.get(
+                                    expTypeBox.getSelectedIndex() - 1))
+                );
                 break;
         }
         return ChartFactory.createPieChart(title, set,
                 true, // legend
                 true, // tooltips
                 false); // urls
-    }
-
-    /**
-     * Generate the appropriate XY chart.
-     * @return The XY chart.
-     */
-    private JFreeChart generateXYChart() {
-        JFreeChart chart = null;
-        return chart;
     }
 
     /**
@@ -140,43 +164,209 @@ public class OverviewTab extends Tab {
      */
     private void setPieDataset(DefaultPieDataset set, Map<String, Double> m) {
         for (Map.Entry<String, Double> entry : m.entrySet()) {
-            set.setValue(entry.getKey(), entry.getValue());
+            if (entry.getValue() < 0) {
+                set.setValue(entry.getKey(), Math.abs(entry.getValue()));
+            }
         }
+        set.setValue("Remaining",
+                new Double(budgetHandler.getRemainingBudget()));
     }
 
     /**
-     * Set/add the contents of a map into a XY dataset. Will add contents if
-     * map contains keys that the dataset does not have.
-     * @param set
-     * @param m
+     * Add HashMap values.
+     * @param m List of HashMaps.
+     * @return Sum of all maps.
      */
-    private void setXYDataset(DefaultXYDataset set, Map<String, Double> m) {
-        for (Map.Entry<String, Double> entry : m.entrySet()) {
-            // TODO: Series stuff...
+    private HashMap<Integer, Double> addMaps(HashMap<Integer, Double>... m) {
+        if (m == null) {
+            throw new NullPointerException();
         }
+        HashMap<Integer, Double> result = new HashMap<>(m[0].size());
+        for (HashMap<Integer, Double> map : m) {
+            for (Integer i = 0; i < map.size(); i++) {
+                result.compute(i, (key, value) -> {
+                    if (result.get(key) == null) {
+                        return (value == null) ? 0d : value;
+                    }
+                    return result.get(key) + value;
+                });
+            }
+        }
+
+        // Finalize all values
+        //finalizeMap(result);
+        return result;
+    }
+
+    /**
+     * Finalize all values of a map properly.
+     * @param result HashMap to modify.
+     */
+    private void finalizeMap(HashMap<Integer, Double> result) {
+        result.forEach((key, val) ->
+                result.compute(key, (k, v) -> {
+                    // If gained, show as 0: that is not SPENT money!
+                    // TODO: Add 'show gained' feature or something similar
+                    if (v.doubleValue() >= 0) {
+                        return 0d;
+                    }
+                    // Make each value positive
+                    return Math.abs(v.doubleValue());
+                })
+        );
+    }
+
+    /**
+     * Create an XYSeries object from the values of a given HashMap.
+     * @param map HashMap to use.
+     * @param name Name of the series.
+     * @return XYSeries containing the HashMap values.
+     */
+    private XYSeries mapToSeries(HashMap<Integer, Double> map, String name) {
+        // Finalize all values
+        finalizeMap(map);
+
+        final XYSeries xy = new XYSeries(name);
+        for (Map.Entry<Integer, Double> entry : map.entrySet()) {
+            xy.add(entry.getKey(), entry.getValue());
+        }
+        return xy;
+    }
+
+    /**
+     * Generate the appropriate XY chart.
+     * @return The XY chart.
+     */
+    private JFreeChart generateXYChart() {
+        DefaultXYDataset set = new DefaultXYDataset();
+        // Generate series:
+        ArrayList<XYSeries> seriesList = null;
+        // All types: show all individual type plots
+        if (catBox.getSelectedIndex() == catBox.getItemCount() - 1) {
+            seriesList = new ArrayList<>(catBox.getItemCount() - 2);
+
+            // Iterate through all the types (excluding last 2 non-type items)
+            for (int i = 0; i < catBox.getItemCount() - 2; i++) {
+                String currentItem = catBox.getItemAt(i);
+
+                final XYSeries series = new XYSeries(catBox.getItemAt(i));
+                HashMap<Integer, Double> datedMap =
+                        (expTypeBox.getSelectedIndex() == 0) ?
+                        // If 0, add both dated expenses
+                        addMaps(
+                                budgetHandler.getDatedExpenses(
+                                        currentItem,
+                                        BudgetHandler.Which.FIXED
+                                ),
+                                budgetHandler.getDatedExpenses(
+                                        currentItem,
+                                        BudgetHandler.Which.VARIABLE
+                                )
+                        )
+                        : // OR != 0
+                        budgetHandler.getDatedExpenses(
+                                currentItem,
+                                BudgetHandler.Which.get(
+                                        expTypeBox.getSelectedIndex() - 1)
+                        );
+
+                // Add the map to the series
+                if (datedMap != null) {
+                    datedMap.forEach((k, v) -> {
+                        series.add(k, v);
+                    });
+                }
+                // Add the series to the list
+                seriesList.add(series);
+            }
+        } else if (catBox.getSelectedIndex() == catBox.getItemCount() - 2) {
+            // Show: no specific category; just overall daily spending
+            seriesList = new ArrayList<>(1);
+            // Accumulate spending of all categories and types of every day
+            HashMap<Integer, Double> sum =
+                    new HashMap<>(FormattedDate.getDay());
+            for (int t = 0; t < catBox.getItemCount() - 2; t++) {
+                if (expTypeBox.getSelectedIndex() != 0) { // Fixed or variable
+                    // Put sum of 'sum' and the dated expenses of a category
+                    sum.putAll(addMaps(
+                            sum,
+                            budgetHandler.getDatedExpenses(
+                            catBox.getItemAt(t),
+                            BudgetHandler.Which.get(
+                                    expTypeBox.getSelectedIndex() - 1))
+                    ));
+                } else { // Both is selected as expense type to show
+                    String category = catBox.getItemAt(t);
+                    sum.putAll(addMaps(
+                            sum,
+                            budgetHandler.getDatedExpenses(
+                                    category,
+                                    BudgetHandler.Which.FIXED
+                            ),
+                            budgetHandler.getDatedExpenses(
+                                    category,
+                                    BudgetHandler.Which.VARIABLE
+                            )
+                    ));
+                }
+            }
+
+            // Put all info into series
+            seriesList.add(mapToSeries(sum, "Total Spending"));
+        } else { // Show an individual plot of a chosen category
+            seriesList = new ArrayList<>(1);
+            String cat = catBox.getItemAt(catBox.getSelectedIndex());
+            seriesList.add(mapToSeries(
+                    (expTypeBox.getSelectedIndex() == 0) ?
+                            // Selected index = both
+                    addMaps(
+                            budgetHandler.getDatedExpenses(
+                                    cat,
+                                    BudgetHandler.Which.FIXED
+                            ),
+                            budgetHandler.getDatedExpenses(
+                                    cat,
+                                    BudgetHandler.Which.VARIABLE
+                            )
+                    )
+                            : // OR if != 0
+                    budgetHandler.getDatedExpenses(
+                            cat,
+                            BudgetHandler.Which.get(
+                                    expTypeBox.getSelectedIndex() - 1
+                            )
+                    ),
+                    cat // Name
+            ));
+        }
+        // Add all series to collection
+        final XYSeriesCollection collection = new XYSeriesCollection();
+        seriesList.forEach(xySeries-> collection.addSeries(xySeries));
+        return ChartFactory.createXYLineChart(
+                title, // title
+                "Day of Month", // x axis
+                "Spent", // y axis
+                collection, // data
+                PlotOrientation.VERTICAL, // orientation
+                true, // legend
+                true, // tooltips
+                false // urls
+        );
     }
 
     /**
      * Update the chart.
      */
     public void update() {
-        // TODO: Add a cache(?)-type function to prevent redundant updates
-        JFreeChart chart;
         if (chartBox.getSelectedIndex() == 0) { // Pie
             chart = generatePieChart();
         } else { // 1, XY
             chart = generateXYChart();
         }
-        int width = internalPanel.getWidth() - 100;
-        int height = internalPanel.getHeight() - 100;
-        if (width <= 0) {
-            width = 400;
-        }
-        if (height <= 0) {
-            height = 400;
-        }
-        chartLabel.setIcon(new ImageIcon(chart.createBufferedImage(width,
-                height)));
+        chart.setTitle("Expenses: " +
+                FormattedDate.getMonthName(FormattedDate.getMonth()) +
+                " " + FormattedDate.getYear());
+        chartPanel.setChart(chart);
     }
 
 }

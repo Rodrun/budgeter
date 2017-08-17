@@ -101,7 +101,7 @@ public class MainWindow extends JFrame {
                     saveAction.setSaveFile(chooser.getSelectedFile());
                     try {
                         budgetHandler.copy(saveAction.getSave().readSave());
-                    } catch (FileNotFoundException x) {
+                     } catch (FileNotFoundException x) {
                         JOptionPane.showMessageDialog(
                                 null,
                                 "Error: " + x.getMessage(),

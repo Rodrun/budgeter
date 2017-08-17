@@ -5,26 +5,26 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A TypesList holds a list of available "types," which are used to
+ * A CategoryList holds a list of available "types," which are used to
  * categorize expenses.
  */
-public class TypesList {
+public class CategoryList {
 
     private List<String> list;
-    private List<TypesChangeListener> listeners = new ArrayList<>();
+    private List<CategoriesChangeListener> listeners = new ArrayList<>();
 
     /**
-     * Create a new instance of TypesList with an initial list.
+     * Create a new instance of CategoryList with an initial list.
      * @param i Initial list of types.
      */
-    public TypesList(String[] i) {
+    public CategoryList(String[] i) {
         setList(i);
     }
 
     /**
      * Create a new instance with an empty initial list.
      */
-    public TypesList() {
+    public CategoryList() {
         setList(new String[] { });
     }
 
@@ -114,10 +114,10 @@ public class TypesList {
     }
 
     /**
-     * Add a TypesChangeListener to listen for modifications to the list.
-     * @param l TypesChangeListener to add.
+     * Add a CategoriesChangeListener to listen for modifications to the list.
+     * @param l CategoriesChangeListener to add.
      */
-    public void addTypesChangeListener(TypesChangeListener l) {
+    public void addTypesChangeListener(CategoriesChangeListener l) {
         listeners.add(l);
     }
 

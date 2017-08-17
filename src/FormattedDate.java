@@ -1,6 +1,8 @@
+import java.time.Month;
+import java.time.format.TextStyle;
 import java.util.Calendar;
+import java.util.Locale;
 import java.util.Vector;
-import java.util.stream.IntStream;
 
 /**
  * Get relevant calendar information.
@@ -9,9 +11,17 @@ public final class FormattedDate {
 
     /**
      * For String.format(...).
-     * Date should be MONTH-DAY.
+     * Date should be in 'MONTH DAY' format, Ex: "February 18".
      */
-    public static final String FORMAT_STRING = "%d-%d";
+    public static final String FORMAT_STRING = "%s %d";
+    /**
+     * Index of the month value from <code>getFormattedDateValues()</code>.
+     */
+    public static final int MONTH_INDEX = 0;
+    /**
+     * Index of the day value from <code>getFormattedDateValues()</code>.
+     */
+    public static final int DAY_INDEX = 1;
 
     private FormattedDate() { }
 
@@ -22,7 +32,7 @@ public final class FormattedDate {
      * @return Formatted date.
      */
     public static String dateFormat(int month, int day) {
-        return String.format(FORMAT_STRING, month, day);
+        return String.format(FORMAT_STRING, getMonthName(month), day);
     }
 
     /**
@@ -42,11 +52,40 @@ public final class FormattedDate {
     }
 
     /**
+     * Get month value from string.
+     * @param month Month string.
+     * @return Integer value of the month.
+     * @throws IllegalArgumentException If no value is found for the string.
+     */
+    public static int getMonthValue(String month)
+            throws IllegalArgumentException {
+        return Month.valueOf(month.trim().toUpperCase()).getValue();
+    }
+
+    /**
+     * Get the name of the given month.
+     * @param i Month number.
+     * @return Full name of the current month.
+     */
+    public static String getMonthName(int i) {
+        Month m = Month.of(i);
+        return m.getDisplayName(TextStyle.FULL, Locale.getDefault());
+    }
+
+    /**
      * Get the current day of the month.
      * @return Day of month.
      */
     public static int getDay() {
         return Calendar.getInstance().get(Calendar.DAY_OF_MONTH);
+    }
+
+    /**
+     * Get the current year.
+     * @return Current year.
+     */
+    public static int getYear() {
+        return Calendar.getInstance().get(Calendar.YEAR);
     }
 
     /**
@@ -80,4 +119,32 @@ public final class FormattedDate {
         }
         return ret;
     }
+
+    /**
+     * Get the values from a formatted date string.
+     * @param fdate Formatted date string.
+     * @return Array containing [month, day] expressed as integers.
+     * @throws IllegalArgumentException If fdate is not properly formatted.
+     */
+    public static int[] getFormattedDateValues(String fdate)
+        throws IllegalArgumentException {
+        int day, month;
+        String[] split = fdate.split(" ");
+
+        // Check if meets criteria of formatted date
+        if (split.length != 2) {
+            throw new IllegalArgumentException("fdate not formatted.");
+        } else { // Meets format criteria so far...
+            try {
+                day = Integer.valueOf(split[1]);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException(
+                        "fdate not formatted correctly: could not parse day.");
+            }
+
+            month = getMonthValue(split[0]); // Throws if invalid
+            return new int[]{ month, day };
+        }
+    }
+
 }

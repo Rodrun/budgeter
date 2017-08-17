@@ -1,13 +1,6 @@
 import com.sun.istack.internal.NotNull;
 
-import javax.swing.*;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.text.TableView;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Vector;
 
 /**
  * A single row in a budget list.
@@ -16,7 +9,7 @@ import java.util.Vector;
 public class BudgetRow {
 
     private String date;
-    private String type;
+    private String category;
     private String name;
     private String money;
 
@@ -28,13 +21,13 @@ public class BudgetRow {
     /**
      * Create a new budget row.
      * @param date Date in 'Month-Day' format.
-     * @param type BudgetRow type.
+     * @param category BudgetRow category.
      * @param name Given name.
      * @param money Money added/subtracted from available.
      */
-    public BudgetRow(String date, String type, String name, String money) {
+    public BudgetRow(String date, String category, String name, String money) {
         this.date = date;
-        this.type = type;
+        this.category = category;
         this.name = name;
         this.money = String.valueOf(money);
     }
@@ -63,7 +56,7 @@ public class BudgetRow {
      * @return Row Objects, every object is a String.
      */
     public Object[] getRowData() {
-        return new Object[]{ date, type, name, money };
+        return new Object[]{ date, category, name, money };
     }
 
     @Override
@@ -71,7 +64,7 @@ public class BudgetRow {
         // Create a formatted string that has all objects separated by delimiter
         return new MessageFormat(
                 "{1}{0}{2}{0}{3}{0}{4}").format(
-                        new Object[]{ DELIMITER, date, type, name, money}
+                        new Object[]{ DELIMITER, date, category, name, money}
                         );
     }
 
@@ -86,8 +79,8 @@ public class BudgetRow {
             case 0: // String date
                 date = String.valueOf(val);
                 break;
-            case 1: // String type
-                type = String.valueOf(val);
+            case 1: // String category
+                category = String.valueOf(val);
                 break;
             case 2: // String name
                 name = String.valueOf(val);
@@ -106,11 +99,16 @@ public class BudgetRow {
         return date;
     }
 
-    public String getType() {
-        return type;
+    public int getDay() {
+        return FormattedDate.getFormattedDateValues(
+                getDate())[FormattedDate.DAY_INDEX];
     }
 
-    public String getMoneyString() {
+    public String getCategory() {
+        return category;
+    }
+
+    public String getMoney() {
         return money;
     }
 
@@ -133,17 +131,17 @@ public class BudgetRow {
     }
 
     /**
-     * For use of sorting purposes. Will remove the '-' from the formatted
-     * date string and will return the month and day as an integer.
+     * Get the day of the formatted date string.
+     * @deprecated Use <code>getDay()</code> from a BudgetRow object.
      * @param fdate Formatted date string.
-     * @return Integer of month and day together.
+     * @return Integer of the day. Will return 1 if fdate is not in proper
+     * format.
      */
-    public static int convertDateToInt(String fdate) {
-        String[] split = fdate.split("-");
-        if (!(split.length < 2)) { // day and month
-            return Integer.valueOf(split[0] +  split[1]);
-        }
-        return 11;
+    @Deprecated
+    public static int getDay(String fdate) throws
+            NumberFormatException {
+        String[] split = fdate.split(" ");
+        return (split.length != 2) ? 1 : Integer.valueOf(split[1]);
     }
 
 }
