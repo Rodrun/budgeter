@@ -47,7 +47,7 @@ public class Save {
      * to have a valid save file.
      */
     public Save() {
-        setPath("");
+        this("");
     }
 
     /**
@@ -56,12 +56,12 @@ public class Save {
      */
     public void writeSave(BudgetHandler budgetHandler) throws IOException {
         getAnonymousLogger().log(Level.INFO, "Writing save...");
-        // SEE: SaveFormat.txt
+        // SEE: SaveFormat.md
         StringBuilder b = new StringBuilder();
         // First section: $budgetHandler
         writeLine(b, Double.toString(budgetHandler.getBudget()));
         // Second section: types
-        for (String type : BudgetHandler.types.getList()) {
+        for (String type : budgetHandler.getCategories().getList()) {
             // Ensure that there are no separator characters in each type
             b.append(type.replaceAll(DELIMITER, "") + DELIMITER);
         }
@@ -87,15 +87,19 @@ public class Save {
 
     /**
      * Read from save file.
+     * @param defaultCats Default category list.
+     * @param t Translator to use.
      * @return Parsed budget, however, will return null if save file is null.
      */
-    public BudgetHandler readSave() throws FileNotFoundException {
+    public BudgetHandler readSave(String[] defaultCats, Translator t) throws
+            FileNotFoundException {
         if (saveFile == null) {
             return null;
         }
-        BudgetHandler budgetHandler = new BudgetHandler();
-        getAnonymousLogger().log(Level.INFO, "Reading save...");
-        // SEE: SaveFormat.txt
+
+        BudgetHandler budgetHandler = new BudgetHandler(defaultCats, t);
+        getAnonymousLogger().info("Reading save...");
+        // SEE: SaveFormat.md
         try (Scanner scanner = new Scanner(saveFile)) {
             /**
              * Determine what to look for depending on the section.
@@ -126,7 +130,9 @@ public class Save {
                         }
                         break;
                     case 2: // types...
-                        BudgetHandler.types.setList(line.split(DELIMITER));
+                        budgetHandler.getCategories().setList(
+                                line.split(DELIMITER)
+                        );
                         break;
                     case 3: // budgetHandler rows...
                         String[] split = line.split(DELIMITER);

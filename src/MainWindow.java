@@ -1,10 +1,15 @@
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonValue;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
-import java.io.BufferedOutputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
+import java.io.*;
+import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static java.util.logging.Logger.*;
 
 /**
  * Created by Juan on 6/28/17.
@@ -23,11 +28,25 @@ public class MainWindow extends JFrame {
     private AddPanel addPanel;
     private InfoPanel infoPanel;
 
-    public MainWindow() {
-        init();
+    /**
+     * Create an instance of the main window and the program.
+     * @param p Preferences to use.
+     * @param t Translations to use.
+     */
+    public MainWindow(Preferences p, Translator t) {
+        init(p, t);
     }
 
-    private void init() {
+    // No emtpy constructor allowed
+    private MainWindow() { }
+
+    /**
+     * Initialize the main window, along with its children and other major
+     * components of the program.
+     * @param prefs Preferences.
+     * @param trans Translator.
+     */
+    private void init(Preferences prefs, Translator trans) {
         // Init
         /* Menu */
         JMenuBar menuBar = new JMenuBar();
@@ -37,7 +56,12 @@ public class MainWindow extends JFrame {
         JMenuItem saveMenuItem = new JMenuItem("Save");
         JMenuItem saveAsMenuItem = new JMenuItem("Save As");
         /* Tabbed pane */
-        budgetHandler = new BudgetHandler();
+        // Create the BudgetHandler
+        JsonArray catsArray = prefs.get("categories").asArray();
+        budgetHandler = new BudgetHandler(
+                Utils.jsonArrayToString(catsArray),
+                trans
+        );
         tabbedPane = new TabbedPane(budgetHandler);
         /* North & South panels */
         infoPanel = new InfoPanel(budgetHandler);
@@ -100,8 +124,11 @@ public class MainWindow extends JFrame {
                     // Read file
                     saveAction.setSaveFile(chooser.getSelectedFile());
                     try {
-                        budgetHandler.copy(saveAction.getSave().readSave());
-                     } catch (FileNotFoundException x) {
+                        budgetHandler.copy(saveAction.getSave().readSave(
+                                budgetHandler.getCategories().toArray(),
+                                trans
+                        ));
+                    } catch (FileNotFoundException x) {
                         JOptionPane.showMessageDialog(
                                 null,
                                 "Error: " + x.getMessage(),
@@ -112,6 +139,7 @@ public class MainWindow extends JFrame {
                     // Set budget and update
                     infoPanel.setBudgetField(budgetHandler.getBudget());
                     budgetHandler.update();
+                    tabbedPane.updateTables();
                 } // Else cancel
             } // Else NO_OPTION
         });
@@ -134,11 +162,11 @@ public class MainWindow extends JFrame {
                     BudgetHandler.Which.get(tabbedPane.getSelectedIndex()),
                     new BudgetRow(
                             FormattedDate.getFormattedToday(),
-                            BudgetHandler.types.getList().get(0),
+                            budgetHandler.getCategories().get(0),
                             "New",
                             "0"
-                            )
-                    );
+                    )
+            );
             budgetHandler.update();
         });
 
@@ -173,7 +201,31 @@ public class MainWindow extends JFrame {
         System.setErr(System.out);
 
         EventQueue.invokeLater(() -> {
-            MainWindow window = new MainWindow();
+            Preferences preferences = null;
+            Translator translator = null;
+            // Read preferences and language
+            getAnonymousLogger().info("Reading preferences...");
+            try {
+                preferences = new Preferences(
+                        "resource/preferences.json"
+                );
+                getAnonymousLogger().info("Initializing translator...");
+                String languageDir = preferences.get("language").asString();
+                translator = new Translator(languageDir);
+            } catch (IOException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(
+                        null,
+                        "An error occurred: " + e.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            } catch (NullPointerException ex) {
+                ex.printStackTrace();
+                // No specific language
+                translator = new Translator();
+            }
+            MainWindow window = new MainWindow(preferences, translator);
             window.setTitle("Budgeter");
             window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             window.pack();

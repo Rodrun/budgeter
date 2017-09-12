@@ -13,6 +13,13 @@ public class BudgetRow {
     private String name;
     private String money;
 
+
+    /**
+     * Amount of tokens a line should have. This is how many parameters a
+     * BudgetRow takes.
+     */
+    private static final int SPLIT_COUNT = 4;
+
     /**
      * Line delimiter (used to split separate tokens).
      */
@@ -121,13 +128,19 @@ public class BudgetRow {
      * @param line String containing one budget row.
      * @return A new BudgetRow.
      * @throws NullPointerException If line is null.
+     * @throws IllegalArgumentException If line split count is invalid.
      */
     @NotNull
-    public static BudgetRow readLine(String line) throws NullPointerException {
+    public static BudgetRow readLine(String line)
+            throws NullPointerException, IllegalArgumentException {
         if (line == null) {
             throw new NullPointerException("Line may not be null.");
         }
-        return new BudgetRow(line.split(BudgetRow.DELIMITER));
+        String[] split = line.split(DELIMITER);
+        if (split.length != 4) { // CHANGE VALUE IF TOKEN SIZE CHANGES!!!
+            throw new IllegalArgumentException("Line has insufficient tokens");
+        }
+        return new BudgetRow(split);
     }
 
     /**

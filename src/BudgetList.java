@@ -1,19 +1,19 @@
-import javax.swing.*;
-import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableColumn;
 import java.util.HashMap;
 import java.util.Vector;
 
 /**
- * The GUI budget table.
+ * The table model for a BudgetTable.
  */
-public class BudgetList extends JTable {
+public class BudgetList extends DefaultTableModel {
 
-    private DefaultTableModel model;
-
-    private static final String[] HEADERS = { "Date", "CategoryList", "Name", "$",
-            "Remove" };
+    private static final String[] HEADERS = {
+            "Date",
+            "CategoryList",
+            "Name",
+            "$",
+            "Remove"
+    };
 
     public enum SortType {
         ALPHABETICAL, // Sort alphabetically
@@ -22,51 +22,23 @@ public class BudgetList extends JTable {
         BY_MONEY_ABS // Sort by absolute money (ignores if positive or negative)
     }
 
-    public BudgetList() {
-        model = new DefaultTableModel();
-        model.setColumnIdentifiers(HEADERS);
-        this.setModel(model);
-        this.getTableHeader().setReorderingAllowed(false);
-        // Set remove column width
-        this.getTableHeader().getColumnModel().getColumn(4).setMaxWidth(75);
-
-        // Cell editors
-        TableColumn dateColumn = this.getColumnModel().getColumn(0);
-        TableColumn typeColumn = this.getColumnModel().getColumn(1);
-        TableColumn moneyColumn = this.getColumnModel().getColumn(4);
-        JComboBox<String> dateCombo = new JComboBox<>(
-                FormattedDate.getDaysOfMonth());
-        JComboBox<String> typeCombo = new JComboBox<>(BudgetHandler.types.toArray());
-        JCheckBox deleteButton = new JCheckBox("X");
-        deleteButton.addActionListener(e -> removeBudget(getSelectedRow()));
-        dateColumn.setCellEditor(new DefaultCellEditor(dateCombo));
-        typeColumn.setCellEditor(new DefaultCellEditor(typeCombo));
-        moneyColumn.setCellEditor(new DefaultCellEditor(deleteButton));
-    }
 
     /**
-     * Update all table cells
+     * Create a BudgetList with translations and starting CategoryList.
+     * @param translator Translator to use.
      */
-    private void update() {
-        // re render all cells
-        this.repaint();
+    public BudgetList(Translator translator) {
+        setColumnIdentifiers(translator.translate(HEADERS));
     }
 
-    /**
-     * Add a TableModelListener to the underlying table model. This detects
-     * changes in the table.
-     * @param l TableModelListener to add.
-     */
-    public void addTableModelListener(TableModelListener l) {
-        model.addTableModelListener(l);
-    }
+    // No empty constructor
+    private BudgetList() { }
 
     /**
      * Clear the budget list.
      */
     public void clear() {
-        model.setRowCount(0);
-        update();
+        setRowCount(0);
     }
 
     /**
@@ -74,8 +46,7 @@ public class BudgetList extends JTable {
      * @param b A BudgetRow.
      */
     public void addBudget(BudgetRow b) {
-        model.addRow(b.getRowData());
-        update();
+        addRow(b.getRowData());
     }
 
     /**
@@ -83,8 +54,7 @@ public class BudgetList extends JTable {
      * @param index Index of the row too remove.
      */
     public void removeBudget(int index) {
-        model.removeRow(index);
-        update();
+        removeRow(index);
     }
 
     /**
@@ -122,12 +92,11 @@ public class BudgetList extends JTable {
      * @return Vector of BudgetRows.
      */
     public Vector<BudgetRow> getRowsVector() {
-        Vector<BudgetRow> vec = new Vector<>();
-        // TODO: Find a more efficient way to do this process
-        for (int r = 0; r < model.getRowCount(); r++) {
+        Vector<BudgetRow> vec = new Vector<>(getRowCount());
+        for (int r = 0; r < getRowCount(); r++) {
             BudgetRow budgetRow = new BudgetRow();
-            for (int col = 0; col < model.getColumnCount(); col++) {
-                budgetRow.setProperField(col, model.getValueAt(r, col));
+            for (int col = 0; col < getColumnCount(); col++) {
+                budgetRow.setProperField(col, getValueAt(r, col));
             }
             vec.add(budgetRow);
         }
@@ -146,15 +115,21 @@ public class BudgetList extends JTable {
      * Get the total amount of expenses by category. If expenses are negative,
      * this means $X has been spent, otherwise if positive, $X have been
      * gained.
+     * @param c The CategoryList to use.
      * @return HashMap of expenses by type.
      */
-    public HashMap<String, Double> getExpenseByCategory() {
-        HashMap<String, Double> map = new HashMap<>(BudgetHandler.types.size());
+    public HashMap<String, Double> getExpenseByCategory(CategoryList c) {
+        HashMap<String, Double> map = new HashMap<>(c.size());
         for (BudgetRow row : getRowsVector()) {
             map.put(row.getCategory(), map.getOrDefault(row.getCategory(), 0d) +
                     row.getMoneyValue());
         }
         return map;
+    }
+
+    @Override
+    public String toString() {
+        return getRows().toString();
     }
 
 }

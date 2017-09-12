@@ -1,10 +1,11 @@
 import javax.swing.*;
+import java.awt.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Create a tab with required information for the main tabbed pane.
- * Made for organizational purposes (holds information only).
+ * Made for organizational purposes.
  */
 public class Tab {
 
@@ -58,6 +59,7 @@ public class Tab {
      * @param list Array of Tabs.
      * @param index Index of the Tab to set selected.
      */
+    @Deprecated
     public static void setSelectedTab(Tab[] list, int index) {
         if (index < 0 || index >= list.length) {
             return; // Possibly set all tabs to not selected?

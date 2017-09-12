@@ -34,20 +34,20 @@ public class OverviewTab extends Tab {
      * The JPanel that will be inside the scroll pane
      */
     private JPanel internalPanel;
-    private BudgetHandler budgetHandler;
-    private JFreeChart chart;
-    private ChartPanel chartPanel;
+    private JFreeChart chart; // Data
+    private ChartPanel chartPanel; // Display
     // Char type, expense type, category
     private JComboBox<String> chartBox, expTypeBox, catBox;
-    private String title;
+    /**
+     * The title of the chart.
+     */
+    private String title = "";
 
     private OverviewTab() { }
 
     public OverviewTab(BudgetHandler budgetHandler) {
         super("Overview", new JPanel());
-        this.budgetHandler = budgetHandler;
-        title = "";
-        init();
+        init(budgetHandler);
     }
 
     /**
@@ -66,19 +66,19 @@ public class OverviewTab extends Tab {
         return title;
     }
 
-    private void init() {
+    private void init(BudgetHandler budgetHandler) {
         internalPanel = new JPanel();
         internalPanel.setLayout(new BoxLayout(internalPanel,
                 BoxLayout.PAGE_AXIS));
         chartBox = new JComboBox<>(chartStrings);
         expTypeBox = new JComboBox<>(expTypeStrings);
-        catBox = new JComboBox<>(BudgetHandler.types.toArray());
+        catBox = new JComboBox<>(budgetHandler.getCategories().toArray());
 
         // Add ActionListeners
         class Updater implements ActionListener {
             @Override
             public void actionPerformed(ActionEvent e) {
-                update();
+                update(budgetHandler);
             }
         }
         Updater listener = new Updater();
@@ -92,11 +92,11 @@ public class OverviewTab extends Tab {
         catBox.setEnabled(false);
 
         // Update types if they're changed
-        BudgetHandler.types.addTypesChangeListener(() -> {
-            updateTypes();
+        budgetHandler.getCategories().addTypesChangeListener(() -> {
+            updateTypes(budgetHandler.getCategories().toArray());
         });
         budgetHandler.addBudgetEventListener(() -> {
-            update();
+            update(budgetHandler);
         });
 
 
@@ -120,10 +120,10 @@ public class OverviewTab extends Tab {
 
     /**
      * Update the typesBox ComboBoxModel.
+     * @param categories Category list to use.
      */
-    private void updateTypes() {
-        catBox.setModel(new DefaultComboBoxModel<>(
-                BudgetHandler.types.toArray()));
+    private void updateTypes(String[] categories) {
+        catBox.setModel(new DefaultComboBoxModel<>(categories));
         // Add required items
         catBox.addItem("((No types; Spending))");
         catBox.addItem("((All types))");
@@ -135,16 +135,22 @@ public class OverviewTab extends Tab {
      * Generate the proper pie chart.
      * @return The pie chart.
      */
-    private JFreeChart generatePieChart() {
+    private JFreeChart generatePieChart(BudgetHandler budgetHandler) {
         DefaultPieDataset set = new DefaultPieDataset();
         // Cannot show specific (category) type, but can show expense types
         switch (expTypeBox.getSelectedIndex()) {
             case 0: // Both
-                setPieDataset(set, budgetHandler.getExpenseByType());
+                setPieDataset(
+                        budgetHandler,
+                        set,
+                        budgetHandler.getExpenseByCategory()
+                );
                 break;
             default: // Fixed or Variable
-                setPieDataset(set,
-                        budgetHandler.getExpenseByType(
+                setPieDataset(
+                        budgetHandler,
+                        set,
+                        budgetHandler.getExpenseByCategory(
                             BudgetHandler.Which.get(
                                     expTypeBox.getSelectedIndex() - 1))
                 );
@@ -159,10 +165,12 @@ public class OverviewTab extends Tab {
     /**
      * Set/add the contents of a map into a Pie dataset. Will add contents if
      * map contains keys that the dataset does not have.
+     * @param budgetHandler BudgetHandler to retrieve information from.
      * @param set DefaultPieDataset to modify.
      * @param m Map of values to set contents to.
      */
-    private void setPieDataset(DefaultPieDataset set, Map<String, Double> m) {
+    private void setPieDataset(BudgetHandler budgetHandler,
+            DefaultPieDataset set, Map<String, Double> m) {
         for (Map.Entry<String, Double> entry : m.entrySet()) {
             if (entry.getValue() < 0) {
                 set.setValue(entry.getKey(), Math.abs(entry.getValue()));
@@ -235,12 +243,13 @@ public class OverviewTab extends Tab {
 
     /**
      * Generate the appropriate XY chart.
+     * @param budgetHandler BudgetHandler to use.
      * @return The XY chart.
      */
-    private JFreeChart generateXYChart() {
+    private JFreeChart generateXYChart(BudgetHandler budgetHandler) {
         DefaultXYDataset set = new DefaultXYDataset();
         // Generate series:
-        ArrayList<XYSeries> seriesList = null;
+        ArrayList<XYSeries> seriesList;
         // All types: show all individual type plots
         if (catBox.getSelectedIndex() == catBox.getItemCount() - 1) {
             seriesList = new ArrayList<>(catBox.getItemCount() - 2);
@@ -356,12 +365,13 @@ public class OverviewTab extends Tab {
 
     /**
      * Update the chart.
+     * @param budgetHandler BudgetHandler to use.
      */
-    public void update() {
+    public void update(BudgetHandler budgetHandler) {
         if (chartBox.getSelectedIndex() == 0) { // Pie
-            chart = generatePieChart();
+            chart = generatePieChart(budgetHandler);
         } else { // 1, XY
-            chart = generateXYChart();
+            chart = generateXYChart(budgetHandler);
         }
         chart.setTitle("Expenses: " +
                 FormattedDate.getMonthName(FormattedDate.getMonth()) +

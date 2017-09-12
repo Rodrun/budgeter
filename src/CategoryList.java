@@ -80,6 +80,25 @@ public class CategoryList {
     }
 
     /**
+     * Check if contains a category.
+     * @param t Category String to search.
+     * @return True if the list contains the category, false otherwise.
+     */
+    public boolean contains(String t) {
+        return getList().contains(t);
+    }
+
+    /**
+     * Get a category.
+     * @param index Index of category.
+     * @return String of category of index exists.
+     * @throws IndexOutOfBoundsException If index is out of bounds.
+     */
+    public String get(int index) {
+        return getList().get(index);
+    }
+
+    /**
      * Remove all types from the list. Notifies change listeners.
      */
     public void clear() {
@@ -110,7 +129,7 @@ public class CategoryList {
         listeners.forEach(listener -> {
             listener.typesChanged();
         });
-        Logger.getAnonymousLogger().log(Level.INFO, "Listeners informed.");
+        Logger.getAnonymousLogger().info("Listeners informed.");
     }
 
     /**

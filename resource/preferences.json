@@ -1,0 +1,13 @@
+{
+  "language":"resource/lang/English.json",
+  "categories":[
+    "Misc.",
+    "Rent",
+    "Utility",
+    "Clothing",
+    "Food",
+    "Loan",
+    "Insurance",
+    "Internet/phone"
+  ]
+}

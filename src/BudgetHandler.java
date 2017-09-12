@@ -41,24 +41,17 @@ public class BudgetHandler {
         }
     }
 
-    public static final String[] DEFAULT_TYPE_ARRAY = new String[]{
-            "Rent",
-            "Insurance",
-            "Utility",
-            "Groceries",
-            "Loan",
-            "Clothing",
-            "Internet/phone",
-            "Misc."
-    };
+    private String[] defaultCategories;
     /**
-     * The budget types available. Types allow the user to categorize
-     * their expenses. The default value is DEFAULT_TYPE_ARRAY.
+     * The budget categories available. These are used by the user to organize.
      */
-    public static CategoryList types = new CategoryList(DEFAULT_TYPE_ARRAY);
+    private CategoryList categories;
 
     private BudgetList[] lists;
-    private List<BudgetEventListener> listeners = new ArrayList<>(2);
+    private List<BudgetEventListener> listeners = new ArrayList<>(3);
+    /**
+     * Amount of money available in the budget.
+     */
     private double budget = 0;
 
     /**
@@ -67,7 +60,9 @@ public class BudgetHandler {
      * @param fixed    Fixed BudgetList.
      * @param variable Variable BudgetList.
      */
-    public BudgetHandler(BudgetList fixed, BudgetList variable) {
+    public BudgetHandler(String[] defaultCats, Translator t, BudgetList fixed,
+                         BudgetList variable) {
+        categories = new CategoryList(defaultCats);
         lists = new BudgetList[]{fixed, variable};
         addListeners();
         update();
@@ -76,10 +71,36 @@ public class BudgetHandler {
     /**
      * Creates a BudgetHandler with empty BudgetLists.
      */
-    public BudgetHandler() {
-        lists = new BudgetList[]{ new BudgetList(), new BudgetList() };
-        addListeners();
-        update();
+    public BudgetHandler(String[] defaultCats, Translator t) {
+        this(defaultCats, t, new BudgetList(t), new BudgetList(t));
+    }
+
+    /**
+     * Get the categories available.
+     * @return The CategoryList.
+     */
+    public CategoryList getCategories() {
+        return categories;
+    }
+
+    /**
+     * Add a category, if it does not exist.
+     * @param cat Category to add.
+     */
+    public void addCategory(String cat) {
+        if (!categories.contains(cat)) {
+            categories.add(cat);
+        }
+    }
+
+    /**
+     * Remove a category if it exists.
+     * @param cat
+     */
+    public void removeCategory(String cat) {
+        if (!categories.contains(cat)) {
+            categories.remove(cat);
+        }
     }
 
     /**
@@ -89,6 +110,11 @@ public class BudgetHandler {
         lists = other.lists;
         listeners = other.listeners;
         budget = other.budget;
+        Logger.getAnonymousLogger().info(
+                "Method copy(): lists = " + Arrays.toString(lists) +
+                        ",  listeners = " + listeners.toString() + ", budget = "
+                + budget
+        );
     }
 
     /**
@@ -133,6 +159,8 @@ public class BudgetHandler {
      */
     public void addBudget(Which which, BudgetRow row) {
         lists[which.index].addBudget(row);
+        Logger.getAnonymousLogger().log(Level.INFO,
+                String.format("Added row: %s", row.toString()));
         update();
     }
 
@@ -243,10 +271,10 @@ public class BudgetHandler {
      * Get the amount of expenses by type for BOTH BudgetLists.
      * @return Map of expenses by type.
      */
-    public HashMap<String, Double> getExpenseByType() {
-        HashMap<String, Double> map = new HashMap<>(types.size());
+    public HashMap<String, Double> getExpenseByCategory() {
+        HashMap<String, Double> map = new HashMap<>(getCategories().size());
         for (BudgetList list : lists) {
-            map.putAll(list.getExpenseByCategory());
+            map.putAll(list.getExpenseByCategory(getCategories()));
         }
         return map;
     }
@@ -257,8 +285,8 @@ public class BudgetHandler {
      * @return HashMap of expenses by type, or null
      * @throws IndexOutOfBoundsException If which is invalid.
      */
-    public HashMap<String, Double> getExpenseByType(Which which) {
-        return lists[which.index].getExpenseByCategory();
+    public HashMap<String, Double> getExpenseByCategory(Which which) {
+        return lists[which.index].getExpenseByCategory(getCategories());
     }
 
     /**
@@ -292,6 +320,10 @@ public class BudgetHandler {
      */
     public BudgetList getBudgetList(Which which) {
         return lists[which.index];
+    }
+
+    public BudgetTable createBudgetTable(Which which) {
+        return new BudgetTable(lists[which.index], categories);
     }
 
 }
