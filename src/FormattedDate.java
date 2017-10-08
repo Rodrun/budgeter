@@ -128,13 +128,13 @@ public final class FormattedDate {
      */
     public static int[] getFormattedDateValues(String fdate)
         throws IllegalArgumentException {
-        int day, month;
         String[] split = fdate.split(" ");
 
         // Check if meets criteria of formatted date
-        if (split.length != 2) {
-            throw new IllegalArgumentException("fdate not formatted.");
+        if (split.length < 2) {
+            throw new IllegalArgumentException("fdate length < 2.");
         } else { // Meets format criteria so far...
+            int day, month;
             try {
                 day = Integer.valueOf(split[1]);
             } catch (NumberFormatException e) {

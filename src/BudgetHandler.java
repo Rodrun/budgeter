@@ -41,7 +41,6 @@ public class BudgetHandler {
         }
     }
 
-    private String[] defaultCategories;
     /**
      * The budget categories available. These are used by the user to organize.
      */

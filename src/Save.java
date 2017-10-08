@@ -150,8 +150,7 @@ public class Save {
                                                             "")
                                             )
                                     );
-                                    System.out.println("ADDED");
-                                    break; // Done with the line
+                                    break; //
                                 }
                             }
                         }
